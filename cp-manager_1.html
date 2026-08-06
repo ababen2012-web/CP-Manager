@@ -1,0 +1,2683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="CP Manager"/>
+<meta name="theme-color" content="#0B1120"/>
+<title>CP Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0B1120; --bg2:#0F1729; --surf:#131E30; --surf2:#1A2840; --surf3:#1F3050;
+  --border:#1E3050; --border2:#253A5E;
+  --cyan:#00C2E0; --cyan-dim:#003D47; --cyan-glow:#00C2E033;
+  --amber:#F5A623; --amber-dim:#3D2A00;
+  --green:#22C55E; --green-dim:#052E16;
+  --red:#EF4444; --red-dim:#2D0A0A;
+  --orange:#F97316; --orange-dim:#2D1500;
+  --purple:#A78BFA; --purple-dim:#1E1040;
+  --text:#E4EDF8; --text2:#8BA8C8; --text3:#4A6480;
+  --safe-top:env(safe-area-inset-top,0px); --safe-bot:env(safe-area-inset-bottom,0px);
+  --radius:10px; --radius-lg:14px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;overflow:hidden}
+#root{display:flex;flex-direction:column;height:100%;max-width:1200px;margin:0 auto}
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ── Layout shells ── */
+.app-shell{display:flex;flex:1;overflow:hidden;flex-direction:column}
+@media(min-width:768px){.app-shell{flex-direction:row}}
+
+/* ── Top header ── */
+.top-bar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:54px;flex-shrink:0;padding-top:var(--safe-top)}
+.top-bar-logo{display:flex;align-items:center;gap:10px}
+.logo-mark{width:34px;height:34px;background:linear-gradient(135deg,var(--cyan),#0080A0);border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#0B1120;letter-spacing:-0.03em;flex-shrink:0}
+.logo-name{font-weight:900;font-size:17px;letter-spacing:-0.04em;color:var(--text)}
+.logo-sub{font-size:10px;color:var(--text3);font-weight:500;letter-spacing:0.04em;text-transform:uppercase}
+.top-bar-right{display:flex;align-items:center;gap:8px}
+.project-selector{background:var(--surf2);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:6px 10px;font-size:13px;font-family:'Inter',sans-serif;font-weight:600;outline:none;cursor:pointer;max-width:180px}
+.btn-new-project{background:var(--cyan);color:#0B1120;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;letter-spacing:0.01em}
+
+/* ── Side nav (desktop) ── */
+.side-nav{width:200px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:none;flex-direction:column;padding:12px 8px;overflow-y:auto}
+@media(min-width:768px){.side-nav{display:flex}}
+.nav-section-label{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;padding:12px 8px 4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:600;transition:all 0.12s;border:1px solid transparent;margin-bottom:1px;text-decoration:none}
+.nav-item:hover{background:var(--surf2);color:var(--text)}
+.nav-item.active{background:var(--surf3);color:var(--cyan);border-color:var(--border2)}
+.nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:9px;font-weight:800}
+
+/* ── Main content ── */
+.main-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg)}
+.page{padding:16px;max-width:900px}
+@media(min-width:768px){.page{padding:24px 28px}}
+
+/* ── Bottom nav (mobile) ── */
+.bottom-nav{display:flex;background:var(--bg2);border-top:1px solid var(--border);padding-bottom:var(--safe-bot);flex-shrink:0}
+@media(min-width:768px){.bottom-nav{display:none}}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px;cursor:pointer;color:var(--text3);font-size:9px;font-weight:600;letter-spacing:0.02em;text-transform:uppercase;border:none;background:none;font-family:'Inter',sans-serif;position:relative}
+.bnav-item.active{color:var(--cyan)}
+.bnav-icon{font-size:18px;line-height:1}
+.bnav-dot{position:absolute;top:6px;right:calc(50% - 14px);width:6px;height:6px;border-radius:50%;background:var(--red);border:1.5px solid var(--bg2)}
+
+/* ── Cards ── */
+.card{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px}
+.card-sm{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.card-title{font-size:14px;font-weight:700;color:var(--text)}
+.card-sub{font-size:11px;color:var(--text3);margin-top:1px}
+
+/* ── Status pills ── */
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;letter-spacing:0.03em}
+.pill-green{background:var(--green-dim);color:var(--green);border:1px solid #15803d44}
+.pill-red{background:var(--red-dim);color:var(--red);border:1px solid #7f1d1d44}
+.pill-amber{background:var(--amber-dim);color:var(--amber);border:1px solid #7D551044}
+.pill-cyan{background:var(--cyan-dim);color:var(--cyan);border:1px solid #00C2E044}
+.pill-purple{background:var(--purple-dim);color:var(--purple);border:1px solid #6d28d944}
+.pill-gray{background:var(--surf2);color:var(--text2);border:1px solid var(--border2)}
+
+/* ── Stat grid ── */
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+@media(min-width:600px){.stat-grid{grid-template-columns:repeat(4,1fr)}}
+.stat-box{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px}
+.stat-label{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px}
+.stat-value{font-size:22px;font-weight:900;letter-spacing:-0.03em}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* ── Progress bar ── */
+.prog-wrap{background:var(--surf2);border-radius:4px;height:7px;overflow:hidden;margin-top:6px}
+.prog-bar{height:100%;border-radius:4px;transition:width 0.4s}
+
+/* ── Warning banner ── */
+.warn-banner{border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;display:flex;gap:10px;align-items:flex-start}
+.warn-banner-red{background:var(--red-dim);border:1px solid #7f1d1d55}
+.warn-banner-amber{background:var(--amber-dim);border:1px solid #7D551055}
+.warn-banner-green{background:var(--green-dim);border:1px solid #15803d55}
+.warn-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.warn-title{font-size:13px;font-weight:700;margin-bottom:3px}
+.warn-text{font-size:12px;color:var(--text2);line-height:1.5}
+
+/* ── Section header ── */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;margin-top:18px}
+.sec-hdr:first-child{margin-top:0}
+.sec-title{font-size:12px;font-weight:700;color:var(--text3);letter-spacing:0.07em;text-transform:uppercase}
+.sec-action{font-size:12px;color:var(--cyan);font-weight:600;cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif}
+
+/* ── Table ── */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.07em;text-transform:uppercase;padding:6px 10px;border-bottom:1px solid var(--border)}
+.tbl td{padding:10px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--surf2)}
+
+/* ── Forms / Inputs ── */
+.field{margin-bottom:13px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:10px 12px;font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color 0.15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--cyan)}
+.field textarea{resize:vertical;min-height:72px;line-height:1.5}
+.field select option{background:var(--bg)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:480px){.field-row{grid-template-columns:1fr}}
+
+/* ── Buttons ── */
+.btn{border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity 0.15s}
+.btn:hover{opacity:0.88}
+.btn-primary{background:var(--cyan);color:#0B1120}
+.btn-secondary{background:var(--surf2);color:var(--text);border:1px solid var(--border2)}
+.btn-danger{background:var(--red-dim);color:var(--red);border:1px solid #7f1d1d55}
+.btn-amber{background:var(--amber-dim);color:var(--amber);border:1px solid #7D551055}
+.btn-sm{padding:5px 11px;font-size:11px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+
+/* ── Modal overlay ── */
+.overlay{position:fixed;inset:0;background:#00000099;z-index:100;display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:600px){.overlay{align-items:center}}
+.modal{background:var(--surf);border-radius:16px 16px 0 0;padding:20px;padding-bottom:calc(20px + var(--safe-bot));width:100%;max-width:560px;max-height:90vh;overflow-y:auto}
+@media(min-width:600px){.modal{border-radius:16px;max-height:85vh}}
+.modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-size:17px;font-weight:800;color:var(--text);margin-bottom:16px;letter-spacing:-0.02em}
+.modal-close{float:right;background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;line-height:1;margin-top:-2px}
+
+/* ── Misc ── */
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.mono{font-family:'JetBrains Mono',monospace}
+.text-right{text-align:right}
+.text-center{text-align:center}
+.muted{color:var(--text3)}
+.empty-state{text-align:center;padding:36px 16px;color:var(--text3)}
+.empty-state .empty-icon{font-size:32px;margin-bottom:10px}
+.empty-state .empty-title{font-size:14px;font-weight:700;color:var(--text2);margin-bottom:4px}
+.empty-state .empty-desc{font-size:12px;line-height:1.5}
+.tag{display:inline-flex;background:var(--surf2);border:1px solid var(--border);border-radius:4px;padding:2px 7px;font-size:11px;color:var(--text2);font-weight:500;margin-right:4px;margin-bottom:4px}
+.flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}.gap-8{gap:8px}.gap-12{gap:12px}.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}.w-full{width:100%}
+.text-green{color:var(--green)}.text-red{color:var(--red)}.text-amber{color:var(--amber)}.text-cyan{color:var(--cyan)}
+.fw-700{font-weight:700}.fw-800{font-weight:800}
+.fs-12{font-size:12px}.fs-13{font-size:13px}.fs-14{font-size:14px}
+
+/* ── Program grid ── */
+.prog-grid{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:600px){.prog-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:900px){.prog-grid{grid-template-columns:repeat(3,1fr)}}
+.prog-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:border-color 0.15s}
+.prog-card:hover{border-color:var(--border2)}
+.prog-card.active{border-color:var(--cyan)}
+
+/* ── Gantt-lite ── */
+.gantt-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px}
+.gantt-label{width:130px;flex-shrink:0;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gantt-track{flex:1;background:var(--surf2);border-radius:3px;height:20px;position:relative;overflow:hidden}
+.gantt-fill{position:absolute;top:0;left:0;height:100%;border-radius:3px;display:flex;align-items:center;padding:0 6px;font-size:10px;font-weight:700;color:#0B1120;white-space:nowrap;overflow:hidden}
+.gantt-today{position:absolute;top:0;width:2px;background:var(--red);height:100%}
+
+/* ── Budget bar ── */
+.budget-row{display:grid;grid-template-columns:140px 1fr auto;gap:10px;align-items:center;margin-bottom:10px;font-size:12px}
+@media(max-width:480px){.budget-row{grid-template-columns:100px 1fr auto}}
+
+/* ── AI TAB & VOICE ───────────────────────────────────── */
+.btn-mic-global{background:var(--surf2);border:1px solid var(--border2);border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:all 0.2s;flex-shrink:0;padding:0}
+.btn-mic-global.listening{background:var(--red-dim);border-color:var(--red);animation:mic-pulse 1s ease-in-out infinite}
+@keyframes mic-pulse{0%,100%{box-shadow:0 0 0 0 #ef444440}50%{box-shadow:0 0 0 8px #ef444400}}
+
+/* Voice Orb — full screen overlay when listening */
+.voice-orb-overlay{position:fixed;inset:0;background:#000000cc;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+.voice-orb{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#00e5ff,#0080A0,#003D47);display:flex;align-items:center;justify-content:center;font-size:44px;cursor:pointer;transition:transform 0.2s;position:relative}
+.voice-orb.listening{animation:orb-breathe 1.2s ease-in-out infinite}
+.voice-orb.thinking{animation:orb-spin 1.5s linear infinite}
+.voice-orb.speaking{animation:orb-speak 0.4s ease-in-out infinite}
+@keyframes orb-breathe{0%,100%{transform:scale(1);box-shadow:0 0 0 0 #00C2E044}50%{transform:scale(1.12);box-shadow:0 0 40px 20px #00C2E022}}
+@keyframes orb-spin{0%{box-shadow:0 0 30px 10px #00C2E044,0 0 0 0 #00C2E000}100%{box-shadow:0 0 30px 10px #00C2E000,0 0 60px 30px #00C2E022}}
+@keyframes orb-speak{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.voice-orb-rings{position:absolute;inset:-20px;border-radius:50%;border:1px solid #00C2E022;animation:ring-expand 2s ease-out infinite}
+.voice-orb-rings:nth-child(2){animation-delay:0.6s}
+.voice-orb-rings:nth-child(3){animation-delay:1.2s}
+@keyframes ring-expand{0%{transform:scale(0.8);opacity:0.6}100%{transform:scale(1.6);opacity:0}}
+.voice-orb-status{color:var(--text);font-size:16px;font-weight:700;margin-top:24px;letter-spacing:0.02em}
+.voice-orb-transcript{color:var(--text2);font-size:13px;margin-top:10px;max-width:280px;text-align:center;line-height:1.5;min-height:40px}
+.voice-orb-hint{color:var(--text3);font-size:11px;margin-top:16px;letter-spacing:0.05em;text-transform:uppercase}
+.voice-orb-close{position:absolute;top:20px;right:20px;background:var(--surf2);border:1px solid var(--border2);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;color:var(--text2)}
+
+/* AI Chat Tab */
+.ai-page{display:flex;flex-direction:column;height:100%;padding:0}
+.ai-header{padding:16px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.ai-title{font-size:20px;font-weight:900;letter-spacing:-0.03em;display:flex;align-items:center;gap:10px}
+.ai-subtitle{font-size:12px;color:var(--text3);margin-top:3px}
+.ai-context-bar{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.ai-ctx-pill{background:var(--surf2);border:1px solid var(--border2);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--text2);font-weight:600;display:flex;align-items:center;gap:4px}
+.ai-messages{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;display:flex;flex-direction:column;gap:12px}
+.ai-msg{display:flex;gap:10px;max-width:100%;animation:msg-in 0.2s ease-out}
+@keyframes msg-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ai-msg.user{flex-direction:row-reverse}
+.ai-msg-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;font-weight:800}
+.ai-msg-avatar.ai-av{background:linear-gradient(135deg,var(--cyan),#0080A0);color:#0B1120}
+.ai-msg-avatar.user-av{background:var(--surf3);border:1px solid var(--border2);font-size:16px}
+.ai-msg-bubble{max-width:85%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.6}
+.ai-msg.ai .ai-msg-bubble{background:var(--surf);border:1px solid var(--border);color:var(--text);border-radius:4px 14px 14px 14px}
+.ai-msg.user .ai-msg-bubble{background:var(--cyan-dim);border:1px solid #00C2E033;color:var(--text);border-radius:14px 4px 14px 14px}
+.ai-msg-time{font-size:10px;color:var(--text3);margin-top:4px;padding:0 4px}
+.ai-typing{display:flex;gap:4px;align-items:center;padding:12px 14px}
+.ai-typing span{width:7px;height:7px;border-radius:50%;background:var(--cyan);animation:typing-dot 1.2s ease-in-out infinite}
+.ai-typing span:nth-child(2){animation-delay:0.2s}
+.ai-typing span:nth-child(3){animation-delay:0.4s}
+@keyframes typing-dot{0%,60%,100%{transform:translateY(0);opacity:0.4}30%{transform:translateY(-6px);opacity:1}}
+.ai-compose{padding:10px 12px;padding-bottom:calc(10px + var(--safe-bot));border-top:1px solid var(--border);flex-shrink:0;background:var(--bg)}
+.ai-compose-row{display:flex;gap:8px;align-items:flex-end}
+.ai-input{flex:1;background:var(--surf2);border:1px solid var(--border2);border-radius:20px;padding:10px 16px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;resize:none;max-height:120px;min-height:42px;line-height:1.5}
+.ai-input::placeholder{color:var(--text3)}
+.ai-input:focus{border-color:var(--cyan)}
+.ai-send-btn{width:42px;height:42px;border-radius:50%;border:none;background:var(--cyan);color:#0B1120;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;transition:all 0.15s}
+.ai-send-btn:disabled{opacity:0.3;cursor:default}
+.ai-voice-btn{width:42px;height:42px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s}
+.ai-voice-btn.active{background:var(--red-dim);border-color:var(--red);color:var(--red);animation:mic-pulse 1s infinite}
+.ai-quick-btns{display:flex;gap:6px;margin-bottom:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.ai-quick-btns::-webkit-scrollbar{display:none}
+.ai-quick{background:var(--surf2);border:1px solid var(--border2);border-radius:16px;padding:5px 12px;font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap;cursor:pointer;flex-shrink:0;font-family:'Inter',sans-serif;transition:all 0.15s}
+.ai-quick:hover{border-color:var(--cyan);color:var(--cyan)}
+/* speaking wave bars */
+.speak-bars{display:flex;gap:3px;align-items:flex-end;height:20px}
+.speak-bar{width:3px;border-radius:2px;background:var(--cyan);animation:bar-wave 0.8s ease-in-out infinite}
+.speak-bar:nth-child(1){animation-delay:0s;height:8px}
+.speak-bar:nth-child(2){animation-delay:0.1s;height:14px}
+.speak-bar:nth-child(3){animation-delay:0.2s;height:20px}
+.speak-bar:nth-child(4){animation-delay:0.3s;height:14px}
+.speak-bar:nth-child(5){animation-delay:0.4s;height:8px}
+@keyframes bar-wave{0%,100%{transform:scaleY(0.4)}50%{transform:scaleY(1)}}position:fixed;bottom:calc(80px + var(--safe-bot));left:50%;transform:translateX(-50%);background:var(--surf3);border:1px solid var(--border2);border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;color:var(--text);z-index:200;box-shadow:0 8px 32px #00000066;pointer-events:none;opacity:0;transition:opacity 0.2s}
+.toast.show{opacity:1}
+@media(min-width:768px){.toast{bottom:24px}}
+/* ── Import drop zone ── */
+.drop-zone{border:2px dashed var(--border2);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color 0.2s;margin-bottom:12px}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--cyan);background:var(--cyan-dim)}
+.drop-zone-icon{font-size:28px;margin-bottom:8px}
+.drop-zone-text{font-size:13px;color:var(--text2);font-weight:600}
+.drop-zone-sub{font-size:11px;color:var(--text3);margin-top:4px}
+/* ── Segment control ── */
+.segment{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px}
+.seg-opt{flex:1;text-align:center;padding:9px;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;border:none;background:none;font-family:'Inter',sans-serif;transition:all 0.15s}
+.seg-opt.active{background:var(--surf2);color:var(--cyan)}
+/* ── Checkbox list ── */
+.check-list{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;margin-bottom:10px}
+.check-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px}
+.check-item input{accent-color:var(--cyan);width:15px;height:15px;flex-shrink:0;cursor:pointer}
+.check-item label{font-size:13px;color:var(--text2);cursor:pointer}
+.btn-green{background:var(--green-dim);color:var(--green);border:1px solid #15803d55}
+
+/* ── COPILOT ENGINE ── */
+.copilot-bar{background:linear-gradient(135deg,#0a1f35,#0d1f3c);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:10px;height:38px;flex-shrink:0;overflow:hidden;position:relative}
+.copilot-bar::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,#00C2E008,transparent);animation:copilot-scan 3s linear infinite}
+@keyframes copilot-scan{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.copilot-label{font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.copilot-pulse{width:7px;height:7px;border-radius:50%;background:var(--cyan);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
+.copilot-signals{display:flex;gap:6px;overflow-x:auto;flex:1;scrollbar-width:none}
+.copilot-signals::-webkit-scrollbar{display:none}
+.copilot-signal{display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;cursor:pointer;transition:all 0.15s;border:1px solid transparent;flex-shrink:0}
+.copilot-signal:hover{opacity:0.85;transform:translateY(-1px)}
+.sig-critical{background:#3d0a0a;color:#f87171;border-color:#7f1d1d55;animation:sig-flash 1.5s ease-in-out infinite}
+@keyframes sig-flash{0%,100%{border-color:#7f1d1d55}50%{border-color:#ef444488}}
+.sig-warning{background:#2d1800;color:#fb923c;border-color:#7c2d1255}
+.sig-watch{background:#1a2800;color:#a3e635;border-color:#3a5c0055}
+.sig-ok{background:var(--green-dim);color:var(--green);border-color:#15803d44}
+.sig-clear{background:var(--surf2);color:var(--text3);border-color:var(--border)}
+.copilot-tab{position:relative}
+.copilot-tab .nav-badge{background:var(--red)}
+
+/* Copilot page */
+.copilot-page{max-width:900px;padding:16px}
+@media(min-width:768px){.copilot-page{padding:24px 28px}}
+.vitals-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:16px}
+@media(min-width:600px){.vitals-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:900px){.vitals-grid{grid-template-columns:repeat(3,1fr)}}
+.vital-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;position:relative;overflow:hidden;transition:border-color 0.2s}
+.vital-card.critical{border-color:#ef444455;background:#1a0808}
+.vital-card.warning{border-color:#f9731655;background:#1a0e00}
+.vital-card.watch{border-color:#a3e63555;background:#0f1a00}
+.vital-card.ok{border-color:#22c55e55}
+.vital-glow{position:absolute;top:0;left:0;right:0;height:2px}
+.vital-name{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:8px}
+.vital-value{font-size:28px;font-weight:900;letter-spacing:-0.03em;margin-bottom:2px}
+.vital-label{font-size:11px;color:var(--text3);margin-bottom:10px}
+.vital-gauge{background:var(--surf2);border-radius:4px;height:5px;overflow:hidden}
+.vital-fill{height:100%;border-radius:4px;transition:width 0.6s cubic-bezier(.4,0,.2,1)}
+.vital-threshold{font-size:10px;color:var(--text3);margin-top:4px}
+
+/* Response cards */
+.response-card{border-radius:var(--radius);padding:14px;margin-bottom:10px;border:1px solid transparent}
+.response-card.active{animation:response-enter 0.3s ease-out}
+@keyframes response-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.response-card-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.response-card-icon{font-size:18px;flex-shrink:0}
+.response-card-title{font-size:13px;font-weight:800;flex:1}
+.response-card-tab{font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:2px 8px;border-radius:10px}
+.response-card-body{font-size:12px;line-height:1.6;color:var(--text2)}
+.response-card-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+
+/* Episode log */
+.episode{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:12px}
+.episode:last-child{border-bottom:none}
+.episode-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.episode-body{flex:1}
+.episode-title{font-weight:700;color:var(--text);margin-bottom:2px}
+.episode-meta{color:var(--text3);font-size:11px}
+
+/* Threshold editor */
+.threshold-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.threshold-row:last-child{border-bottom:none}
+.threshold-name{flex:1;font-size:13px;font-weight:600;color:var(--text2)}
+.threshold-input{width:70px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:5px 8px;font-size:13px;font-family:'JetBrains Mono',monospace;outline:none;text-align:right}
+.threshold-unit{font-size:11px;color:var(--text3);width:28px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="xlsxFileInput" accept=".xlsx,.xls,.csv" style="display:none"/>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// DATA LAYER
+// ═══════════════════════════════════════════════════════════════
+const STORE_KEY = 'cpmanager_v1';
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || defaultState(); }
+  catch(e) { return defaultState(); }
+}
+function saveState() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(STATE)); } catch(e) {}
+}
+function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
+function defaultState() {
+  const pid = uid();
+  return {
+    activeProject: pid,
+    activeTab: 'program',
+    projects: [{
+      id: pid,
+      name: 'Greenway Mixed-Use Development',
+      client: 'Greenway Properties Ltd',
+      location: 'Bristol, UK',
+      startDate: '2024-06-01',
+      endDate: '2025-12-31',
+      budget: 4500000,
+      status: 'active',
+      // Scope
+      scope: {
+        description: 'Construction of a 6-storey mixed-use development comprising ground-floor retail, 4 floors of residential apartments (48 units), and a rooftop communal terrace. Includes full MEP fit-out, landscaping, and basement car park.',
+        items: [
+          {id:uid(),title:'Substructure & Foundations',included:true},
+          {id:uid(),title:'Structural Frame (RC)',included:true},
+          {id:uid(),title:'External Cladding & Façade',included:true},
+          {id:uid(),title:'MEP Services (Full)',included:true},
+          {id:uid(),title:'Internal Fit-Out (Residential)',included:true},
+          {id:uid(),title:'Retail Shell & Core',included:true},
+          {id:uid(),title:'Rooftop Terrace Landscaping',included:true},
+          {id:uid(),title:'Basement Car Park (32 spaces)',included:true},
+        ],
+        creepItems: []
+      },
+      // Schedule
+      schedule: {
+        overallProgress: 38,
+        plannedProgress: 52,
+        tasks: [
+          {id:uid(),name:'Substructure',plannedStart:'2024-06-01',plannedEnd:'2024-08-15',actualStart:'2024-06-03',actualEnd:'2024-08-28',status:'complete'},
+          {id:uid(),name:'Frame – Levels 1-3',plannedStart:'2024-08-16',plannedEnd:'2024-10-31',actualStart:'2024-09-02',actualEnd:'2024-11-20',status:'complete'},
+          {id:uid(),name:'Frame – Levels 4-6',plannedStart:'2024-11-01',plannedEnd:'2025-01-15',actualStart:'2024-11-21',actualEnd:null,status:'in-progress'},
+          {id:uid(),name:'External Envelope',plannedStart:'2025-01-16',plannedEnd:'2025-04-30',actualStart:null,actualEnd:null,status:'pending'},
+          {id:uid(),name:'MEP Rough-In',plannedStart:'2025-02-01',plannedEnd:'2025-06-30',actualStart:null,actualEnd:null,status:'pending'},
+          {id:uid(),name:'Internal Fit-Out',plannedStart:'2025-05-01',plannedEnd:'2025-10-31',actualStart:null,actualEnd:null,status:'pending'},
+          {id:uid(),name:'Commissioning & Handover',plannedStart:'2025-11-01',plannedEnd:'2025-12-31',actualStart:null,actualEnd:null,status:'pending'},
+        ],
+        delayLog: [
+          {id:uid(),date:'2024-09-10',cause:'Late concrete delivery due to supplier shortage',impact:'3 weeks',solution:'Switched to alternative supplier; additional pour shift added'},
+          {id:uid(),date:'2024-11-05',cause:'Revised structural drawings issued late by engineer',impact:'2 weeks',solution:'Fast-track review programme agreed with design team'},
+        ]
+      },
+      // Budget
+      budget_data: {
+        original: 4500000,
+        approved_changes: 85000,
+        spent: 1980000,
+        committed: 420000,
+        breakdown: [
+          {id:uid(),code:'01',area:'Substructure',budget:480000,spent:491000,committed:0},
+          {id:uid(),code:'02',area:'Structural Frame',budget:920000,spent:887000,committed:180000},
+          {id:uid(),code:'03',area:'External Envelope',budget:650000,spent:0,committed:120000},
+          {id:uid(),code:'04',area:'MEP Services',budget:780000,spent:0,committed:0},
+          {id:uid(),code:'05',area:'Internal Fit-Out',budget:920000,spent:0,committed:0},
+          {id:uid(),code:'06',area:'Landscaping',budget:210000,spent:0,committed:0},
+          {id:uid(),code:'07',area:'Preliminaries',budget:380000,spent:292000,committed:60000},
+          {id:uid(),code:'08',area:'Contingency',budget:160000,spent:310000,committed:60000},
+        ],
+        overspendLog: []
+      },
+      // Quality
+      quality: {
+        requirements: [
+          {id:uid(),ref:'QR-001',description:'All concrete mixes to comply with BS EN 206',category:'Structural',status:'active'},
+          {id:uid(),ref:'QR-002',description:'External cladding U-value ≤ 0.18 W/m²K',category:'Envelope',status:'active'},
+          {id:uid(),ref:'QR-003',description:'All MEP installations to CIBSE standards',category:'MEP',status:'active'},
+        ],
+        checks: [
+          {id:uid(),date:'2024-07-15',ref:'QC-001',description:'Foundation concrete pour inspection',result:'Pass',inspector:'D. Torres',notes:'All cube tests within spec'},
+          {id:uid(),date:'2024-09-22',ref:'QC-002',description:'Level 2 slab inspection',result:'Pass',inspector:'D. Torres',notes:'Minor surface defects remediated on-site'},
+          {id:uid(),date:'2024-10-18',ref:'QC-003',description:'Rebar cover check – Level 3',result:'Fail',inspector:'D. Torres',notes:'Cover insufficient in NE corner; corrective works issued'},
+        ],
+        ncrs: [
+          {id:uid(),date:'2024-10-18',ref:'NCR-001',description:'Insufficient rebar cover – Level 3 NE corner',severity:'Major',status:'Closed',action:'Additional cover chairs installed; re-inspected 25/10/24'},
+        ]
+      },
+      // Safety
+      safety: {
+        requirements: [
+          {id:uid(),ref:'SR-001',description:'All works to comply with CDM 2015',category:'Regulatory',status:'active'},
+          {id:uid(),ref:'SR-002',description:'Weekly toolbox talks – recorded and signed',category:'Induction',status:'active'},
+          {id:uid(),ref:'SR-003',description:'RAMS required for all lifting operations',category:'Lifting',status:'active'},
+        ],
+        checks: [
+          {id:uid(),date:'2024-08-01',ref:'SC-001',description:'Weekly site safety inspection',result:'Pass',inspector:'M. Webb',notes:'All PPE compliant, housekeeping good'},
+          {id:uid(),date:'2024-09-05',ref:'SC-002',description:'Crane lift pre-check',result:'Pass',inspector:'M. Webb',notes:'Lift plan signed off, exclusion zone in place'},
+          {id:uid(),date:'2024-11-12',ref:'SC-003',description:'Weekly site safety inspection',result:'Fail',inspector:'M. Webb',notes:'Unguarded edge at Level 4 – stop-work issued'},
+        ],
+        incidents: [
+          {id:uid(),date:'2024-11-12',ref:'INC-001',description:'Unguarded leading edge at Level 4',severity:'High',status:'Closed',action:'Edge protection installed same day; near-miss report submitted'},
+        ]
+      },
+      // Communication
+      comms: {
+        stakeholders: [
+          {id:uid(),name:'Sarah Okonkwo',role:'Client Rep',org:'Greenway Properties',email:'s.okonkwo@greenway.co',phone:'07700900001',type:'client'},
+          {id:uid(),name:'James Elliot',role:'Project Director',org:'Greenway Properties',email:'j.elliot@greenway.co',phone:'07700900002',type:'client'},
+          {id:uid(),name:'Tom Bradshaw',role:'Main Contractor PM',org:'CoreBuild Ltd',email:'t.bradshaw@corebuild.co',phone:'07700900010',type:'contractor'},
+          {id:uid(),name:'Marcus Webb',role:'Site Manager',org:'CoreBuild Ltd',email:'m.webb@corebuild.co',phone:'07700900011',type:'contractor'},
+          {id:uid(),name:'Apex Electrical',role:'Electrical Sub',org:'Apex Elec. Co.',email:'jobs@apexelec.co',phone:'07700900020',type:'sub'},
+        ],
+        updates: [
+          {id:uid(),date:'2024-11-15',type:'Progress Report',recipients:['client'],subject:'Monthly Progress Report – November 2024',body:'Works at 38% overall. Frame Levels 4-6 in progress. Delay of approx. 6 weeks against programme due to late design information and concrete supply issues. Recovery programme in place.',sentBy:'Sarah Okonkwo'},
+          {id:uid(),date:'2024-10-01',type:'Site Instruction',recipients:['contractor'],subject:'SI-012: Additional rebar cover – Level 3',body:'Contractor to install additional cover chairs to NE corner of Level 3 slab as per NCR-001. Works to be completed and re-inspected before pour proceeds.',sentBy:'Sarah Okonkwo'},
+        ]
+      }
+    }]
+  };
+}
+
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+let STATE = loadState();
+let modalState = null;
+
+// ═══════════════════════════════════════════════════════════════
+// GETTERS
+// ═══════════════════════════════════════════════════════════════
+function activeProject(){ return STATE.projects.find(p=>p.id===STATE.activeProject)||STATE.projects[0]; }
+const tabs = [
+  {id:'program',   label:'Program',   icon:'🗂'},
+  {id:'copilot',   label:'Copilot',   icon:'🧬'},
+  {id:'scope',     label:'Scope',     icon:'📋'},
+  {id:'schedule',  label:'Schedule',  icon:'📅'},
+  {id:'budget',    label:'Budget',    icon:'💵'},
+  {id:'quality',   label:'Quality',   icon:'✅'},
+  {id:'safety',    label:'Safety',    icon:'🦺'},
+  {id:'comms',     label:'Comms',     icon:'📡'},
+  {id:'ai',        label:'AI',        icon:'🤖'},
+];
+
+// ═══════════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════════
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmt(n){ return Number(n||0).toLocaleString('en-US'); }
+function fmtGBP(n){ return '$'+fmt(Math.round(n||0)); }
+function pct(a,b){ return b?Math.round(a/b*100):0; }
+function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/(1000*60*60*24)); }
+function today(){ return new Date().toISOString().split('T')[0]; }
+function fmtDate(d){ if(!d)return'—'; const dt=new Date(d); return dt.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'}); }
+function fmtMonth(){ return new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'}); }
+function statusPill(s){
+  const map={
+    'On Track':'pill-green','Complete':'pill-green','Pass':'pill-green','Closed':'pill-green','active':'pill-cyan',
+    'At Risk':'pill-amber','in-progress':'pill-cyan','pending':'pill-gray','Minor':'pill-amber',
+    'Delayed':'pill-red','Fail':'pill-red','Open':'pill-red','Major':'pill-red','High':'pill-red','Critical':'pill-red'
+  };
+  return `<span class="pill ${map[s]||'pill-gray'}">${esc(s)}</span>`;
+}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER ENGINE
+// ═══════════════════════════════════════════════════════════════
+function render(){
+  const proj = activeProject();
+  const t = STATE.activeTab;
+  document.getElementById('root').innerHTML = buildShell(proj, t);
+  attachListeners();
+  if(modalState) showModal();
+}
+
+function buildShell(proj, t){
+  const projectOpts = STATE.projects.map(p=>`<option value="${p.id}" ${p.id===STATE.activeProject?'selected':''}>${esc(p.name)}</option>`).join('');
+  return `
+  <div style="height:var(--safe-top);background:var(--bg2);flex-shrink:0"></div>
+  <div class="top-bar">
+    <div class="top-bar-logo">
+      <div class="logo-mark">CP</div>
+      <div>
+        <div class="logo-name">CP Manager</div>
+        <div class="logo-sub">Construction PM</div>
+      </div>
+    </div>
+    <div class="top-bar-right">
+      <select class="project-selector" id="projSelect">${projectOpts}</select>
+      <button class="btn-mic-global" id="btnGlobalMic" title="Voice command" onclick="toggleGlobalVoice()">🎙</button>
+      <button class="btn-new-project" id="btnNewProj">+ New</button>
+    </div>
+  </div>
+  ${buildCopilotBar(proj)}
+  <div class="app-shell">
+    <nav class="side-nav">
+      <div class="nav-section-label">Navigation</div>
+      ${tabs.map(tab=>{
+        const signals = tab.id!=='program'&&tab.id!=='copilot' ? getCopilotSignalsForTab(proj,tab.id) : [];
+        const hasCrit = signals.some(s=>s.level==='critical');
+        const hasWarn = signals.some(s=>s.level==='warning');
+        const badge = hasCrit?`<span class="nav-badge">!</span>`:hasWarn?`<span class="nav-badge" style="background:var(--amber)">!</span>`:'';
+        return `<div class="nav-item ${t===tab.id?'active':''} ${tab.id==='copilot'?'copilot-tab':''}" data-tab="${tab.id}">
+          <span class="nav-icon">${tab.icon}</span>${tab.label}${badge}
+        </div>`;
+      }).join('')}
+      <div style="margin-top:auto"></div>
+      <div class="nav-section-label">Tools</div>
+      <div class="nav-item" data-modal="importExcel"><span class="nav-icon">📥</span>Import Excel</div>
+      <div class="nav-item" data-modal="exportReport"><span class="nav-icon">📤</span>Monthly Report</div>
+    </nav>
+    <div class="main-content" id="mainContent">
+      <div class="page">${renderPage(proj,t)}</div>
+    </div>
+  </div>
+  <nav class="bottom-nav">
+    ${tabs.map(tab=>{
+      const sigs=tab.id!=='program'&&tab.id!=='copilot'?getCopilotSignalsForTab(proj,tab.id):[];
+      const hasCrit=sigs.some(s=>s.level==='critical');
+      const hasWarn=!hasCrit&&sigs.some(s=>s.level==='warning');
+      return `<button class="bnav-item ${t===tab.id?'active':''}" data-tab="${tab.id}">
+        <span class="bnav-icon">${tab.icon}</span>${tab.label}
+        ${hasCrit?`<span class="bnav-dot"></span>`:hasWarn?`<span class="bnav-dot" style="background:var(--amber)"></span>`:''}
+      </button>`;
+    }).join('')}
+  </nav>`;
+}
+
+function renderPage(proj, t){
+  if(t==='program')  return renderProgram();
+  if(t==='copilot')  return renderCopilot(proj);
+  if(t==='scope')    return renderScope(proj);
+  if(t==='schedule') return renderSchedule(proj);
+  if(t==='budget')   return renderBudget(proj);
+  if(t==='quality')  return renderQuality(proj);
+  if(t==='safety')   return renderSafety(proj);
+  if(t==='comms')    return renderComms(proj);
+  if(t==='ai')       return renderAI(proj);
+  return '';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COPILOT ENGINE — Homeostatic Project Regulation
+// ═══════════════════════════════════════════════════════════════
+
+// Default thresholds — user-configurable per project
+const DEFAULT_THRESHOLDS = {
+  budgetVariancePct:  10,   // % overspend triggers response
+  scheduleSlipPct:    8,    // % behind planned triggers response
+  openNCRs:           2,    // count of open NCRs
+  openIncidents:      1,    // count of open safety incidents
+  scopeCreepScore:    2,    // number of unapproved scope changes
+};
+
+function getThresholds(proj) {
+  return Object.assign({}, DEFAULT_THRESHOLDS, proj._copilotThresholds||{});
+}
+
+// ── SENSORS: read current vitals ──────────────────────────────
+function readVitals(proj) {
+  const bd = proj.budget_data;
+  const sch = proj.schedule;
+  const contract = bd.original + bd.approved_changes;
+  const forecast = bd.spent + bd.committed;
+  const budgetVariancePct = contract > 0 ? Math.round(((forecast - contract) / contract) * 100) : 0;
+  const scheduleSlipPct = sch.plannedProgress - sch.overallProgress;
+  const openNCRs = proj.quality.ncrs.filter(n => n.status === 'Open').length;
+  const openIncidents = proj.safety.incidents.filter(i => i.status === 'Open').length;
+  const scopeCreepScore = (proj.scope.creepItems||[]).filter(c => c.status === 'Open').length;
+  return { budgetVariancePct, scheduleSlipPct, openNCRs, openIncidents, scopeCreepScore };
+}
+
+// ── SIGNAL GENERATOR: compare vitals vs thresholds ────────────
+function generateSignals(proj) {
+  const v = readVitals(proj);
+  const th = getThresholds(proj);
+  const signals = [];
+
+  // Budget signal
+  if (v.budgetVariancePct > th.budgetVariancePct) {
+    signals.push({ id:'budget', level:'critical', sensor:'Budget Variance',
+      value: '+'+v.budgetVariancePct+'%', threshold: th.budgetVariancePct+'%',
+      icon:'💰', label:`Budget +${v.budgetVariancePct}% over`,
+      responses: [
+        { tab:'budget',   icon:'🏦', title:'Pull from Contingency', color:'#ef4444',
+          body:`Contingency draw-down recommended. Current overrun: ${fmtGBP(forecast(proj)-contract(proj))}. Review Dimension Code 08 — contingency balance should be allocated against overrunning lines.`,
+          action:'View Budget', actionTab:'budget' },
+        { tab:'budget',   icon:'🔒', title:'Freeze Discretionary Changes', color:'#f97316',
+          body:'Copilot has flagged all unapproved change orders for review. No new change orders should be raised until budget is back within threshold.',
+          action:null },
+        { tab:'schedule', icon:'🔀', title:'Resequence Tasks to Reduce Cost', color:'#f59e0b',
+          body:'Review pending tasks for resequencing opportunities. Tasks with optional scope or long lead-times may be deferred to reduce immediate cash exposure.',
+          action:'View Schedule', actionTab:'schedule' },
+        { tab:'comms',    icon:'📡', title:'Escalate Reporting Frequency', color:'#a78bfa',
+          body:'Budget threshold breached. Copilot recommends switching stakeholder updates from monthly to bi-weekly until variance is resolved.',
+          action:'Compose Update', actionTab:'comms' },
+        { tab:'scope',    icon:'📋', title:'Tighten Scope Creep Threshold', color:'#60a5fa',
+          body:'Scope creep warning threshold has been temporarily reduced. Any new scope additions require immediate cost impact assessment before approval.',
+          action:'View Scope', actionTab:'scope' },
+      ]
+    });
+  } else if (v.budgetVariancePct > th.budgetVariancePct * 0.6) {
+    signals.push({ id:'budget-watch', level:'warning', sensor:'Budget Variance',
+      value: v.budgetVariancePct > 0 ? '+'+v.budgetVariancePct+'%' : v.budgetVariancePct+'%',
+      threshold: th.budgetVariancePct+'%', icon:'💰', label:`Budget at ${v.budgetVariancePct}%`,
+      responses: [
+        { tab:'budget', icon:'⚠️', title:'Budget Approaching Threshold', color:'#f59e0b',
+          body:`Forecast variance is ${v.budgetVariancePct}% — approaching the ${th.budgetVariancePct}% alert threshold. Monitor committed costs closely and review upcoming change orders.`,
+          action:'View Budget', actionTab:'budget' },
+      ]
+    });
+  }
+
+  // Schedule signal
+  if (v.scheduleSlipPct > th.scheduleSlipPct) {
+    signals.push({ id:'schedule', level:'critical', sensor:'Schedule Slip',
+      value: v.scheduleSlipPct+'%', threshold: th.scheduleSlipPct+'%',
+      icon:'📅', label:`Schedule −${v.scheduleSlipPct}% behind`,
+      responses: [
+        { tab:'schedule', icon:'⚡', title:'Crash Critical Path Tasks', color:'#ef4444',
+          body:`Programme is ${v.scheduleSlipPct}% behind planned progress. Identify in-progress tasks eligible for acceleration (overtime, additional resources, parallel working). Update delay register with recovery measures.`,
+          action:'View Schedule', actionTab:'schedule' },
+        { tab:'scope',    icon:'✂️', title:'Review Scope for Fast-Track Options', color:'#f97316',
+          body:'Consider phased handover or deferred scope items that could free up critical path resources without contractual risk.',
+          action:'View Scope', actionTab:'scope' },
+        { tab:'comms',    icon:'📡', title:'Issue Programme Recovery Notice', color:'#a78bfa',
+          body:'Schedule threshold breached. A formal Programme Recovery Notice should be issued to the Main Contractor within 48 hours. Copilot will auto-log this in the comms register.',
+          action:'Compose Update', actionTab:'comms' },
+        { tab:'budget',   icon:'💸', title:'Assess Acceleration Cost Impact', color:'#f59e0b',
+          body:'Crashing the programme typically costs 5–20% of remaining contract value. Assess the cost of acceleration against the cost of delay (liquidated damages, prolongation costs).',
+          action:'View Budget', actionTab:'budget' },
+      ]
+    });
+  } else if (v.scheduleSlipPct > th.scheduleSlipPct * 0.5) {
+    signals.push({ id:'schedule-watch', level:'warning', sensor:'Schedule Slip',
+      value: v.scheduleSlipPct+'%', threshold: th.scheduleSlipPct+'%',
+      icon:'📅', label:`Schedule −${v.scheduleSlipPct}% slip`,
+      responses: [
+        { tab:'schedule', icon:'👁', title:'Programme Slip Developing', color:'#f59e0b',
+          body:`Programme is slipping at ${v.scheduleSlipPct}% behind plan. Log causes in the delay register and confirm recovery measures with the contractor before next reporting period.`,
+          action:'View Schedule', actionTab:'schedule' },
+      ]
+    });
+  }
+
+  // Quality NCR signal
+  if (v.openNCRs >= th.openNCRs) {
+    signals.push({ id:'quality', level: v.openNCRs > th.openNCRs * 2 ? 'critical' : 'warning',
+      sensor:'Open NCRs', value: v.openNCRs, threshold: th.openNCRs,
+      icon:'✅', label:`${v.openNCRs} Open NCR${v.openNCRs>1?'s':''}`,
+      responses: [
+        { tab:'quality',  icon:'🚫', title:'NCR Stop-Work Review', color:'#ef4444',
+          body:`${v.openNCRs} open NCR${v.openNCRs>1?'s':''} exceed the threshold. Affected work areas must not proceed until NCRs are formally closed and re-inspected.`,
+          action:'View Quality', actionTab:'quality' },
+        { tab:'schedule', icon:'⏸', title:'Flag Affected Tasks as Blocked', color:'#f97316',
+          body:'Tasks dependent on NCR-affected areas should be flagged in the schedule as blocked. Update delay register if NCR resolution causes programme impact.',
+          action:'View Schedule', actionTab:'schedule' },
+        { tab:'comms',    icon:'📋', title:'Notify Client of NCR Status', color:'#a78bfa',
+          body:'Open NCRs at threshold require formal notification to the client representative. Copilot recommends issuing a QA status update within 24 hours.',
+          action:'Compose Update', actionTab:'comms' },
+      ]
+    });
+  }
+
+  // Safety incident signal
+  if (v.openIncidents >= th.openIncidents) {
+    signals.push({ id:'safety', level:'critical', sensor:'Safety Incidents',
+      value: v.openIncidents, threshold: th.openIncidents,
+      icon:'🦺', label:`${v.openIncidents} Open Incident${v.openIncidents>1?'s':''}`,
+      responses: [
+        { tab:'safety',   icon:'🚨', title:'IMMEDIATE: Close Open Incidents', color:'#ef4444',
+          body:`${v.openIncidents} open safety incident${v.openIncidents>1?'s':''} — this is a CRITICAL signal. All affected work areas must remain suspended until corrective actions are verified and the incident is formally closed.`,
+          action:'View Safety', actionTab:'safety' },
+        { tab:'comms',    icon:'📞', title:'Immediate Stakeholder Notification', color:'#ef4444',
+          body:'Safety incidents require immediate notification to the client rep and relevant regulatory bodies. Do not wait for the next scheduled report.',
+          action:'Compose Update', actionTab:'comms' },
+        { tab:'schedule', icon:'⏸', title:'Suspend Affected Works in Schedule', color:'#f97316',
+          body:'Update the schedule to reflect suspended works. A safety stand-down period should be logged as a delay event.',
+          action:'View Schedule', actionTab:'schedule' },
+      ]
+    });
+  }
+
+  // Scope creep signal
+  if (v.scopeCreepScore >= th.scopeCreepScore) {
+    signals.push({ id:'scope', level:'warning', sensor:'Scope Creep',
+      value: v.scopeCreepScore, threshold: th.scopeCreepScore,
+      icon:'📋', label:`${v.scopeCreepScore} Unresolved Changes`,
+      responses: [
+        { tab:'scope',    icon:'🔎', title:'Scope Creep Audit Required', color:'#f59e0b',
+          body:`${v.scopeCreepScore} scope change${v.scopeCreepScore>1?'s':''} are open and unresolved. Each open change that is not formally approved or rejected creates cost and programme risk.`,
+          action:'View Scope', actionTab:'scope' },
+        { tab:'budget',   icon:'💷', title:'Quantify Scope Change Cost Exposure', color:'#f59e0b',
+          body:'Total potential cost of open scope changes should be tracked against contingency. If cumulative exposure exceeds 5% of contract sum, raise a formal change order notice.',
+          action:'View Budget', actionTab:'budget' },
+        { tab:'comms',    icon:'📋', title:'Issue Scope Change Notice to Contractor', color:'#a78bfa',
+          body:'Formally notify the contractor of the scope change status. Unapproved changes should not be instructed verbally — issue a formal Change Notice.',
+          action:'Compose Update', actionTab:'comms' },
+      ]
+    });
+  }
+
+  return signals;
+}
+
+// Helper closures for budget calcs in signal responses
+function forecast(proj){ return proj.budget_data.spent + proj.budget_data.committed; }
+function contract(proj){ return proj.budget_data.original + proj.budget_data.approved_changes; }
+
+// ── Get signals relevant to a specific tab ────────────────────
+function getCopilotSignalsForTab(proj, tabId) {
+  const signals = generateSignals(proj);
+  return signals.filter(sig => sig.responses.some(r => r.tab === tabId));
+}
+
+// ── Run the homeostatic feedback loop ─────────────────────────
+function runCopilotFeedback(proj) {
+  const signals = generateSignals(proj);
+  const vitals = readVitals(proj);
+  const th = getThresholds(proj);
+  if(!proj._copilotLog) proj._copilotLog = [];
+
+  // Check if any previously critical signals have resolved
+  const prevActive = proj._copilotActiveSignals || [];
+  prevActive.forEach(sigId => {
+    const stillActive = signals.find(s => s.id === sigId);
+    if (!stillActive) {
+      proj._copilotLog.unshift({
+        id: uid(), date: today(), type: 'resolved',
+        title: `Signal resolved: ${sigId.replace('-',' ')}`,
+        note: 'Copilot detected that this variable has returned within threshold. Elevated response protocols have been relaxed.'
+      });
+    }
+  });
+
+  proj._copilotActiveSignals = signals.map(s => s.id);
+  return signals;
+}
+
+// ── BUILD COPILOT BAR (sits between header and content) ───────
+function buildCopilotBar(proj) {
+  const signals = generateSignals(proj);
+  const critCount = signals.filter(s => s.level === 'critical').length;
+  if (!signals.length) {
+    return `<div class="copilot-bar">
+      <div class="copilot-label"><span class="copilot-pulse"></span>Copilot</div>
+      <div class="copilot-signals"><span class="copilot-signal sig-ok">✓ All vitals within range — ${esc(proj.name)}</span></div>
+    </div>`;
+  }
+  const pills = signals.map(sig => {
+    const cls = sig.level === 'critical' ? 'sig-critical' : sig.level === 'warning' ? 'sig-warning' : 'sig-watch';
+    return `<span class="copilot-signal ${cls}" data-tab="copilot">${sig.icon} ${esc(sig.label)}</span>`;
+  }).join('');
+  return `<div class="copilot-bar">
+    <div class="copilot-label"><span class="copilot-pulse"></span>Copilot${critCount?` <span style="color:var(--red)">${critCount}⚠</span>`:''}</div>
+    <div class="copilot-signals">${pills}</div>
+    <button class="copilot-signal sig-clear" data-tab="copilot" style="flex-shrink:0;margin-left:4px">View →</button>
+  </div>`;
+}
+
+// ── COPILOT PAGE RENDERER ─────────────────────────────────────
+function renderCopilot(proj) {
+  const signals = runCopilotFeedback(proj);
+  const vitals = readVitals(proj);
+  const th = getThresholds(proj);
+  const bd = proj.budget_data;
+  const con = bd.original + bd.approved_changes;
+  const fc = bd.spent + bd.committed;
+
+  let html = `<div style="margin-bottom:20px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <div style="font-size:22px;font-weight:900;letter-spacing:-0.03em">🧬 Copilot</div>
+      <span class="pill ${signals.length?signals.some(s=>s.level==='critical')?'pill-red':'pill-amber':'pill-green'}">
+        ${signals.length ? signals.length+' Active Signal'+(signals.length>1?'s':'') : 'All Clear'}
+      </span>
+    </div>
+    <div style="font-size:13px;color:var(--text3)">Homeostatic project regulation for <strong style="color:var(--text2)">${esc(proj.name)}</strong>. Sensors run continuously — signals fire when variables cross your thresholds and relax when they return.</div>
+  </div>`;
+
+  // ── Vitals dashboard ──
+  html += `<div style="font-size:12px;font-weight:700;color:var(--text3);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:10px">Project Vitals</div>`;
+  html += `<div class="vitals-grid">`;
+
+  const vitalDefs = [
+    { key:'budgetVariancePct', label:'Budget Variance', unit:'%', icon:'💰',
+      value: vitals.budgetVariancePct, max: th.budgetVariancePct * 2 || 20,
+      display: (vitals.budgetVariancePct > 0 ? '+' : '') + vitals.budgetVariancePct + '%',
+      sub: vitals.budgetVariancePct > 0 ? `Over by ${fmtGBP(fc - con)}` : vitals.budgetVariancePct < 0 ? `Under by ${fmtGBP(con - fc)}` : 'On budget',
+      level: vitals.budgetVariancePct > th.budgetVariancePct ? 'critical' : vitals.budgetVariancePct > th.budgetVariancePct * 0.6 ? 'warning' : 'ok' },
+    { key:'scheduleSlipPct', label:'Schedule Slip', unit:'%', icon:'📅',
+      value: vitals.scheduleSlipPct, max: th.scheduleSlipPct * 2 || 20,
+      display: vitals.scheduleSlipPct + '%',
+      sub: `${proj.schedule.overallProgress}% actual vs ${proj.schedule.plannedProgress}% planned`,
+      level: vitals.scheduleSlipPct > th.scheduleSlipPct ? 'critical' : vitals.scheduleSlipPct > th.scheduleSlipPct * 0.5 ? 'warning' : 'ok' },
+    { key:'openNCRs', label:'Open NCRs', unit:'', icon:'✅',
+      value: vitals.openNCRs, max: Math.max(th.openNCRs * 2, 5),
+      display: vitals.openNCRs,
+      sub: `Threshold: ${th.openNCRs}`,
+      level: vitals.openNCRs >= th.openNCRs ? 'critical' : 'ok' },
+    { key:'openIncidents', label:'Open Incidents', unit:'', icon:'🦺',
+      value: vitals.openIncidents, max: Math.max(th.openIncidents * 2, 3),
+      display: vitals.openIncidents,
+      sub: `Threshold: ${th.openIncidents}`,
+      level: vitals.openIncidents >= th.openIncidents ? 'critical' : 'ok' },
+    { key:'scopeCreepScore', label:'Scope Creep', unit:'', icon:'📋',
+      value: vitals.scopeCreepScore, max: Math.max(th.scopeCreepScore * 2, 6),
+      display: vitals.scopeCreepScore,
+      sub: `Open unresolved changes`,
+      level: vitals.scopeCreepScore >= th.scopeCreepScore ? 'warning' : 'ok' },
+  ];
+
+  const glowColor = { critical:'var(--red)', warning:'var(--amber)', watch:'#a3e635', ok:'var(--green)' };
+
+  vitalDefs.forEach(v => {
+    const fillPct = Math.min(100, Math.round((v.value / v.max) * 100));
+    const fillColor = v.level === 'critical' ? 'var(--red)' : v.level === 'warning' ? 'var(--amber)' : 'var(--green)';
+    html += `<div class="vital-card ${v.level}">
+      <div class="vital-glow" style="background:${glowColor[v.level]||'var(--green)'}"></div>
+      <div class="vital-name">${v.icon} ${v.label}</div>
+      <div class="vital-value" style="color:${fillColor}">${v.display}</div>
+      <div class="vital-label">${v.sub}</div>
+      <div class="vital-gauge"><div class="vital-fill" style="width:${fillPct}%;background:${fillColor}"></div></div>
+      <div class="vital-threshold">Threshold: ${v.key==='budgetVariancePct'||v.key==='scheduleSlipPct'?th[v.key]+'%':th[v.key]}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // ── Active responses ──
+  if (signals.length) {
+    html += `<div style="font-size:12px;font-weight:700;color:var(--text3);letter-spacing:0.07em;text-transform:uppercase;margin:20px 0 10px">Active Response Protocols</div>`;
+    html += `<div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.5">Like the parathyroid releasing hormone — each triggered signal fires a coordinated set of responses across multiple tabs simultaneously, not a single alarm.</div>`;
+
+    signals.forEach(sig => {
+      const borderColor = sig.level === 'critical' ? '#ef444433' : '#f9731633';
+      const bgColor = sig.level === 'critical' ? '#1a080855' : '#1a0e0055';
+      html += `<div style="background:${bgColor};border:1px solid ${borderColor};border-radius:12px;padding:14px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:20px">${sig.icon}</span>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:800;color:var(--text)">${sig.sensor} — Signal Firing</div>
+            <div style="font-size:11px;color:var(--text3)">Current: <strong style="color:${sig.level==='critical'?'var(--red)':'var(--amber)'}">${sig.value}</strong> · Threshold: ${sig.threshold}</div>
+          </div>
+          <span class="pill ${sig.level==='critical'?'pill-red':'pill-amber'}">${sig.level.toUpperCase()}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">`;
+      sig.responses.forEach(resp => {
+        const tabName = tabs.find(t=>t.id===resp.tab);
+        html += `<div class="response-card active" style="background:var(--surf2);border:1px solid var(--border2);border-radius:9px;padding:12px">
+          <div class="response-card-header">
+            <span class="response-card-icon">${resp.icon}</span>
+            <span class="response-card-title" style="color:${resp.color}">${resp.title}</span>
+            ${tabName?`<span class="response-card-tab" style="background:${resp.color}22;color:${resp.color}">${tabName.icon} ${tabName.label}</span>`:''}
+          </div>
+          <div class="response-card-body">${resp.body}</div>
+          ${resp.actionTab?`<div style="margin-top:8px"><button class="btn btn-sm btn-secondary" data-tab="${resp.actionTab}">Go to ${tabs.find(t=>t.id===resp.actionTab)?.label||resp.actionTab} →</button></div>`:''}
+        </div>`;
+      });
+      html += `</div></div>`;
+    });
+  } else {
+    html += `<div class="card" style="text-align:center;padding:28px">
+      <div style="font-size:32px;margin-bottom:10px">✅</div>
+      <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px">All Vitals Within Range</div>
+      <div style="font-size:13px;color:var(--text3);line-height:1.5">No response protocols are active. Copilot is monitoring all 5 sensors continuously. When any variable crosses a threshold, coordinated responses will fire automatically across the relevant tabs.</div>
+    </div>`;
+  }
+
+  // ── Threshold settings ──
+  html += `<div class="sec-hdr" style="margin-top:24px"><span class="sec-title">⚙️ Sensor Thresholds</span><button class="sec-action" data-modal="editThresholds">Edit Thresholds</button></div>`;
+  html += `<div class="card-sm" style="padding:0;overflow:auto"><table class="tbl"><thead><tr><th>Sensor</th><th>Current Value</th><th>Your Threshold</th><th>Status</th></tr></thead><tbody>`;
+  vitalDefs.forEach(v => {
+    const tVal = v.key==='budgetVariancePct'||v.key==='scheduleSlipPct' ? th[v.key]+'%' : th[v.key];
+    html += `<tr><td><span style="margin-right:6px">${v.icon}</span>${v.label}</td>
+      <td style="font-weight:700;color:${v.level==='critical'?'var(--red)':v.level==='warning'?'var(--amber)':'var(--green)'}">${v.display}</td>
+      <td class="mono">${tVal}</td>
+      <td>${statusPill(v.level==='critical'?'Fail':v.level==='warning'?'At Risk':'Pass')}</td></tr>`;
+  });
+  html += `</tbody></table></div>`;
+
+  // ── Episode log ──
+  const log = proj._copilotLog || [];
+  html += `<div class="sec-hdr" style="margin-top:20px"><span class="sec-title">📜 Episode Log</span></div>`;
+  if (!log.length) {
+    html += `<div class="card-sm"><div class="muted fs-13">No episodes recorded yet. When signals fire and resolve, they are logged here automatically.</div></div>`;
+  } else {
+    html += `<div class="card-sm" style="padding:12px">`;
+    log.slice(0, 20).forEach(ep => {
+      const dotColor = ep.type === 'resolved' ? 'var(--green)' : ep.type === 'critical' ? 'var(--red)' : 'var(--amber)';
+      html += `<div class="episode">
+        <div class="episode-dot" style="background:${dotColor}"></div>
+        <div class="episode-body">
+          <div class="episode-title">${esc(ep.title)}</div>
+          <div class="episode-meta">${fmtDate(ep.date)} · ${esc(ep.note||'')}</div>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PROGRAM TAB
+// ═══════════════════════════════════════════════════════════════
+function renderProgram(){
+  const projects = STATE.projects;
+  let html = `<div class="flex items-center justify-between" style="margin-bottom:16px">
+    <div>
+      <div style="font-size:22px;font-weight:900;letter-spacing:-0.03em;color:var(--text)">Programme Overview</div>
+      <div style="font-size:13px;color:var(--text3);margin-top:2px">${projects.length} project${projects.length!==1?'s':''} in portfolio</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary btn-sm" data-modal="exportReport">📤 Monthly Report</button>
+      <button class="btn btn-primary" id="btnNewProj2">+ New Project</button>
+    </div>
+  </div>`;
+
+  // Summary stats
+  const totalBudget = projects.reduce((s,p)=>s+p.budget,0);
+  const active = projects.filter(p=>p.status==='active').length;
+  html += `<div class="stat-grid">
+    <div class="stat-box"><div class="stat-label">Projects</div><div class="stat-value text-cyan">${projects.length}</div></div>
+    <div class="stat-box"><div class="stat-label">Active</div><div class="stat-value text-green">${active}</div></div>
+    <div class="stat-box"><div class="stat-label">Total Budget</div><div class="stat-value" style="font-size:16px">${fmtGBP(totalBudget)}</div></div>
+    <div class="stat-box"><div class="stat-label">Delayed</div><div class="stat-value text-red">${projects.filter(p=>p.status==='delayed').length}</div></div>
+  </div>`;
+
+  html += `<div class="prog-grid">`;
+  projects.forEach(p => {
+    const bd = p.budget_data;
+    const sch = p.schedule;
+    const spent = bd ? bd.spent : 0;
+    const budgetTotal = bd ? bd.original + bd.approved_changes : p.budget;
+    const spentPct = pct(spent, budgetTotal);
+    const overBudget = spent > budgetTotal;
+    const scheduleStatus = sch && sch.overallProgress < sch.plannedProgress - 5 ? 'Delayed' : 'On Track';
+    const isActive = p.id === STATE.activeProject;
+    html += `<div class="prog-card ${isActive?'active':''}" data-open-project="${p.id}">
+      <div class="flex items-center justify-between" style="margin-bottom:10px">
+        <div style="font-size:15px;font-weight:800;color:var(--text);letter-spacing:-0.02em;flex:1;margin-right:8px;line-height:1.3">${esc(p.name)}</div>
+        ${statusPill(p.status==='active'?scheduleStatus:p.status)}
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">📍 ${esc(p.location)} · ${esc(p.client)}</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">
+        <span class="muted">Start:</span> ${fmtDate(p.startDate)} &nbsp;→&nbsp; <span class="muted">End:</span> ${fmtDate(p.endDate)}
+      </div>
+      <div style="margin-bottom:6px">
+        <div class="flex justify-between" style="font-size:11px;color:var(--text3);margin-bottom:3px">
+          <span>Budget: ${fmtGBP(budgetTotal)}</span>
+          <span style="color:${overBudget?'var(--red)':'var(--text2)'}">${spentPct}% spent</span>
+        </div>
+        <div class="prog-wrap"><div class="prog-bar" style="width:${Math.min(spentPct,100)}%;background:${overBudget?'var(--red)':'var(--green)'}"></div></div>
+      </div>
+      ${sch?`<div style="margin-bottom:0">
+        <div class="flex justify-between" style="font-size:11px;color:var(--text3);margin-bottom:3px">
+          <span>Schedule</span><span style="color:${sch.overallProgress<sch.plannedProgress-5?'var(--red)':'var(--cyan)'}">${sch.overallProgress}% complete</span>
+        </div>
+        <div class="prog-wrap">
+          <div class="prog-bar" style="width:${sch.plannedProgress}%;background:var(--border2)"></div>
+          <div class="prog-bar" style="width:${sch.overallProgress}%;background:var(--cyan);margin-top:-7px"></div>
+        </div>
+      </div>`:''}
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn btn-sm btn-primary" data-open-project="${p.id}" data-goto-tab="scope">Open Project →</button>
+        <button class="btn btn-sm btn-secondary" data-clone-project="${p.id}">⧉ Clone</button>
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCOPE TAB
+// ═══════════════════════════════════════════════════════════════
+function renderScope(proj){
+  const sc = proj.scope;
+  const bd = proj.budget_data;
+  const sch = proj.schedule;
+  const schedDelay = sch && sch.overallProgress < sch.plannedProgress - 5;
+  const budgetOverrun = bd && (bd.spent + bd.committed) > (bd.original + bd.approved_changes);
+  const hasCreep = sc.creepItems && sc.creepItems.length > 0;
+
+  let html = pageHeader(proj.name,'Scope Management');
+
+  // Warnings
+  if(schedDelay || budgetOverrun){
+    html += `<div class="warn-banner warn-banner-red">
+      <div class="warn-icon">⚠️</div>
+      <div>
+        <div class="warn-title text-red">Scope Creep Risk Detected</div>
+        <div class="warn-text">
+          ${schedDelay?`Schedule is running ${proj.schedule.plannedProgress - proj.schedule.overallProgress}% behind planned progress. `:''}
+          ${budgetOverrun?'Budget commitments exceed the approved contract sum. ':''}
+          Review scope items below and log any scope changes that may be contributing.
+        </div>
+      </div>
+    </div>`;
+  } else {
+    html += `<div class="warn-banner warn-banner-green"><div class="warn-icon">✅</div>
+      <div><div class="warn-title text-green">Scope Status: Under Control</div>
+      <div class="warn-text">No schedule or budget overruns detected. Scope appears to be well-managed.</div></div></div>`;
+  }
+
+  // Project description
+  html += `<div class="card">
+    <div class="card-header">
+      <div><div class="card-title">Project Scope Statement</div></div>
+      <button class="btn btn-sm btn-secondary" data-modal="editScopeDesc">Edit</button>
+    </div>
+    <div style="font-size:14px;color:var(--text2);line-height:1.65">${esc(sc.description)||'<em>No scope statement added yet.</em>'}</div>
+  </div>`;
+
+  // Scope items
+  html += `<div class="sec-hdr"><span class="sec-title">Scope Items</span><button class="sec-action" data-modal="addScopeItem">+ Add Item</button></div>`;
+  html += `<div class="card-sm" style="padding:0;overflow:hidden">
+    <table class="tbl"><thead><tr><th>#</th><th>Description</th><th>Included</th></tr></thead><tbody>`;
+  sc.items.forEach((item,i)=>{
+    html+=`<tr><td class="muted mono" style="width:40px">${i+1}</td><td>${esc(item.title)}</td>
+      <td>${item.included?'<span class="text-green">✓ Yes</span>':'<span class="text-red">✗ Excluded</span>'}</td></tr>`;
+  });
+  html += `</tbody></table></div>`;
+
+  // Scope creep log
+  html += `<div class="sec-hdr"><span class="sec-title">Scope Creep Log</span><button class="sec-action" data-modal="addCreep">+ Log Change</button></div>`;
+  if(!sc.creepItems||!sc.creepItems.length){
+    html+=`<div class="card-sm"><div class="muted fs-13">No scope changes logged yet.</div></div>`;
+  } else {
+    html+=`<div class="card-sm" style="padding:0;overflow:hidden"><table class="tbl"><thead><tr><th>Date</th><th>Change</th><th>Cost Impact</th><th>Time Impact</th><th>Status</th></tr></thead><tbody>`;
+    sc.creepItems.forEach(c=>{
+      html+=`<tr><td class="mono muted" style="font-size:11px">${fmtDate(c.date)}</td><td>${esc(c.description)}</td>
+        <td class="${c.costImpact>0?'text-red':'text-green'}">${c.costImpact>0?'+':''}${fmtGBP(c.costImpact)}</td>
+        <td>${esc(c.timeImpact)}</td><td>${statusPill(c.status)}</td></tr>`;
+    });
+    html+=`</tbody></table></div>`;
+  }
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCHEDULE TAB
+// ═══════════════════════════════════════════════════════════════
+function renderSchedule(proj){
+  const sch = proj.schedule;
+  const delay = sch.plannedProgress - sch.overallProgress;
+  const isDelayed = delay > 5;
+  let html = pageHeader(proj.name,'Schedule & Programme');
+
+  // Health banner
+  html += isDelayed
+    ? `<div class="warn-banner warn-banner-red"><div class="warn-icon">⚠️</div>
+        <div><div class="warn-title text-red">Project is Behind Programme</div>
+        <div class="warn-text">Overall progress is <strong>${sch.overallProgress}%</strong> against a planned <strong>${sch.plannedProgress}%</strong> — a variance of <strong>${delay}%</strong>. See delay log below for causes and mitigations.</div></div></div>`
+    : `<div class="warn-banner warn-banner-green"><div class="warn-icon">✅</div>
+        <div><div class="warn-title text-green">Project On Programme</div>
+        <div class="warn-text">Overall progress tracking within 5% of planned. Continue to monitor critical path.</div></div></div>`;
+
+  // Stats
+  html += `<div class="stat-grid">
+    <div class="stat-box"><div class="stat-label">Actual Progress</div><div class="stat-value text-cyan">${sch.overallProgress}%</div></div>
+    <div class="stat-box"><div class="stat-label">Planned Progress</div><div class="stat-value">${sch.plannedProgress}%</div></div>
+    <div class="stat-box"><div class="stat-label">Variance</div><div class="stat-value ${isDelayed?'text-red':'text-green'}">${isDelayed?'-':''}${Math.abs(delay)}%</div></div>
+    <div class="stat-box"><div class="stat-label">Project End</div><div class="stat-value" style="font-size:14px;margin-top:4px">${fmtDate(proj.endDate)}</div></div>
+  </div>`;
+
+  // Gantt-lite
+  html += `<div class="sec-hdr"><span class="sec-title">Programme (Gantt View)</span><button class="sec-action" data-modal="addTask">+ Add Task</button></div>`;
+  html += `<div class="card" style="overflow-x:auto">`;
+  const allDates = sch.tasks.flatMap(t=>[t.plannedStart,t.plannedEnd].filter(Boolean));
+  const minDate = new Date(allDates.reduce((a,b)=>a<b?a:b));
+  const maxDate = new Date(allDates.reduce((a,b)=>a>b?a:b));
+  const span = daysBetween(minDate.toISOString().split('T')[0], maxDate.toISOString().split('T')[0]) || 1;
+  const todayPct = Math.max(0,Math.min(100,pct(daysBetween(minDate.toISOString().split('T')[0],today()),span)));
+
+  sch.tasks.forEach(task=>{
+    const startPct = Math.max(0,pct(daysBetween(minDate.toISOString().split('T')[0],task.plannedStart),span));
+    const widthPct = Math.max(2,pct(daysBetween(task.plannedStart,task.plannedEnd),span));
+    const color = task.status==='complete'?'var(--green)':task.status==='in-progress'?'var(--cyan)':'var(--surf3)';
+    const textColor = task.status==='pending'?'var(--text3)':'#0B1120';
+    html+=`<div class="gantt-row">
+      <div class="gantt-label" title="${esc(task.name)}">${esc(task.name)}</div>
+      <div class="gantt-track">
+        <div class="gantt-fill" style="left:${startPct}%;width:${widthPct}%;background:${color};color:${textColor}">${task.status}</div>
+        <div class="gantt-today" style="left:${todayPct}%"></div>
+      </div>
+      ${statusPill(task.status==='complete'?'Complete':task.status==='in-progress'?'On Track':'pending')}
+    </div>`;
+  });
+  html+=`<div style="font-size:10px;color:var(--text3);margin-top:8px">Red line = today. Grey bars = pending, Blue = in progress, Green = complete.</div></div>`;
+
+  // Delay log
+  html+=`<div class="sec-hdr"><span class="sec-title">Delay Register</span><button class="sec-action" data-modal="addDelay">+ Log Delay</button></div>`;
+  if(!sch.delayLog.length){
+    html+=`<div class="card-sm"><div class="muted fs-13">No delays logged.</div></div>`;
+  } else {
+    sch.delayLog.forEach(d=>{
+      html+=`<div class="card-sm">
+        <div class="flex justify-between items-center" style="margin-bottom:6px">
+          <span class="mono muted" style="font-size:11px">${fmtDate(d.date)}</span>
+          <span class="pill pill-amber">⏱ ${esc(d.impact)}</span>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">⚠️ ${esc(d.cause)}</div>
+        <div style="font-size:12px;color:var(--green)">💡 ${esc(d.solution)}</div>
+      </div>`;
+    });
+  }
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BUDGET TAB
+// ═══════════════════════════════════════════════════════════════
+function renderBudget(proj){
+  const bd = proj.budget_data;
+  const contract = bd.original + bd.approved_changes;
+  const totalCommitted = bd.committed;
+  const forecast = bd.spent + totalCommitted;
+  const overrun = forecast - contract;
+  const isOver = overrun > 0;
+  let html = pageHeader(proj.name,'Budget & Cost Control');
+
+  html += isOver
+    ? `<div class="warn-banner warn-banner-red"><div class="warn-icon">⚠️</div>
+        <div><div class="warn-title text-red">Budget Overrun Forecast</div>
+        <div class="warn-text">Forecast cost of <strong>${fmtGBP(forecast)}</strong> exceeds the contract sum by <strong>${fmtGBP(overrun)}</strong>. Review dimension codes below for causes. Consider instructing a change order or value engineering.</div></div></div>`
+    : `<div class="warn-banner warn-banner-green"><div class="warn-icon">✅</div>
+        <div><div class="warn-title text-green">Budget Under Control</div>
+        <div class="warn-text">Forecast cost of <strong>${fmtGBP(forecast)}</strong> is within the contract sum of <strong>${fmtGBP(contract)}</strong>. Headroom: <strong>${fmtGBP(contract-forecast)}</strong>.</div></div></div>`;
+
+  html+=`<div class="stat-grid">
+    <div class="stat-box"><div class="stat-label">Contract Sum</div><div class="stat-value" style="font-size:15px">${fmtGBP(contract)}</div><div class="stat-sub">incl. approved changes</div></div>
+    <div class="stat-box"><div class="stat-label">Spent to Date</div><div class="stat-value text-cyan" style="font-size:15px">${fmtGBP(bd.spent)}</div><div class="stat-sub">${pct(bd.spent,contract)}% of contract</div></div>
+    <div class="stat-box"><div class="stat-label">Committed</div><div class="stat-value text-amber" style="font-size:15px">${fmtGBP(totalCommitted)}</div><div class="stat-sub">contracted, not yet paid</div></div>
+    <div class="stat-box"><div class="stat-label">Forecast Final</div><div class="stat-value ${isOver?'text-red':'text-green'}" style="font-size:15px">${fmtGBP(forecast)}</div><div class="stat-sub">${isOver?'OVER':'under'} by ${fmtGBP(Math.abs(overrun))}</div></div>
+  </div>`;
+
+  // Overall bar
+  const spentPct = Math.min(100,pct(bd.spent,contract));
+  const committedPct = Math.min(100-spentPct, pct(totalCommitted,contract));
+  html+=`<div class="card" style="margin-bottom:14px">
+    <div class="card-header"><span class="card-title">Cost Profile</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-secondary" data-modal="importExcel">📥 Import</button>
+        <button class="btn btn-sm btn-primary" data-modal="addBudgetChange">+ Change Order</button>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Spent + Committed vs Contract Sum</div>
+    <div style="background:var(--surf2);border-radius:6px;height:28px;overflow:hidden;position:relative">
+      <div style="position:absolute;left:0;top:0;height:100%;width:${spentPct}%;background:var(--cyan);display:flex;align-items:center;padding:0 8px;font-size:11px;font-weight:700;color:#0B1120">Spent</div>
+      <div style="position:absolute;left:${spentPct}%;top:0;height:100%;width:${committedPct}%;background:var(--amber);display:flex;align-items:center;padding:0 6px;font-size:11px;font-weight:700;color:#0B1120">Cmtd</div>
+    </div>
+    <div class="flex" style="gap:16px;margin-top:8px;font-size:11px;color:var(--text3)">
+      <span style="color:var(--cyan)">■ Spent</span>
+      <span style="color:var(--amber)">■ Committed</span>
+      <span style="color:var(--surf3)">■ Remaining</span>
+    </div>
+  </div>`;
+
+  // Breakdown table
+  html+=`<div class="sec-hdr"><span class="sec-title">Dimension Code Breakdown</span><button class="sec-action" data-modal="addBudgetLine">+ Add Line</button></div>`;
+  html+=`<div class="card-sm" style="padding:0;overflow:auto"><table class="tbl">
+    <thead><tr><th>Code</th><th>Area</th><th>Budget</th><th>Spent</th><th>Committed</th><th>Variance</th><th>Status</th></tr></thead><tbody>`;
+  bd.breakdown.forEach(line=>{
+    const total = line.spent + line.committed;
+    const variance = line.budget - total;
+    const over = variance < 0;
+    html+=`<tr>
+      <td class="mono muted">${esc(line.code)}</td>
+      <td style="font-weight:600;color:var(--text)">${esc(line.area)}</td>
+      <td class="mono">${fmtGBP(line.budget)}</td>
+      <td class="mono text-cyan">${fmtGBP(line.spent)}</td>
+      <td class="mono text-amber">${fmtGBP(line.committed)}</td>
+      <td class="mono ${over?'text-red':'text-green'}">${over?'-':''}${fmtGBP(Math.abs(variance))}</td>
+      <td>${statusPill(over?'Fail':'Pass')}</td>
+    </tr>`;
+  });
+  html+=`<tr style="background:var(--surf2)">
+    <td></td><td style="font-weight:800;color:var(--text)">TOTAL</td>
+    <td class="mono fw-700">${fmtGBP(bd.breakdown.reduce((s,l)=>s+l.budget,0))}</td>
+    <td class="mono fw-700 text-cyan">${fmtGBP(bd.breakdown.reduce((s,l)=>s+l.spent,0))}</td>
+    <td class="mono fw-700 text-amber">${fmtGBP(bd.breakdown.reduce((s,l)=>s+l.committed,0))}</td>
+    <td class="mono fw-700 ${isOver?'text-red':'text-green'}">${isOver?'-':''}${fmtGBP(Math.abs(contract - forecast))}</td>
+    <td>${statusPill(isOver?'Fail':'Pass')}</td>
+  </tr>`;
+  html+=`</tbody></table></div>`;
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// QUALITY TAB
+// ═══════════════════════════════════════════════════════════════
+function renderQuality(proj){
+  const q = proj.quality;
+  const passCount = q.checks.filter(c=>c.result==='Pass').length;
+  const failCount = q.checks.filter(c=>c.result==='Fail').length;
+  const openNcrs = q.ncrs.filter(n=>n.status==='Open').length;
+  let html = pageHeader(proj.name,'Quality Management');
+
+  if(openNcrs>0) html+=`<div class="warn-banner warn-banner-red"><div class="warn-icon">⚠️</div>
+    <div><div class="warn-title text-red">${openNcrs} Open Non-Conformance Report${openNcrs>1?'s':''}</div>
+    <div class="warn-text">Outstanding NCRs require resolution before affected works can proceed. See NCR register below.</div></div></div>`;
+  else html+=`<div class="warn-banner warn-banner-green"><div class="warn-icon">✅</div>
+    <div><div class="warn-title text-green">No Open NCRs</div>
+    <div class="warn-text">All non-conformances are closed. Continue routine quality checks.</div></div></div>`;
+
+  html+=`<div class="stat-grid">
+    <div class="stat-box"><div class="stat-label">Requirements</div><div class="stat-value text-cyan">${q.requirements.length}</div></div>
+    <div class="stat-box"><div class="stat-label">QC Checks</div><div class="stat-value">${q.checks.length}</div></div>
+    <div class="stat-box"><div class="stat-label">Pass Rate</div><div class="stat-value text-green">${q.checks.length?pct(passCount,q.checks.length):0}%</div></div>
+    <div class="stat-box"><div class="stat-label">Open NCRs</div><div class="stat-value ${openNcrs?'text-red':'text-green'}">${openNcrs}</div></div>
+  </div>`;
+
+  html += renderCheckSection('Quality Requirements','qReq',q.requirements,'addQReq','addQCheck','Quality Checks','addNCR','Non-Conformance Register (NCRs)',q.checks,q.ncrs);
+  return html;
+}
+
+function renderCheckSection(reqTitle,_,reqs,addReqModal,addCheckModal,checkTitle,addNcrModal,ncrTitle,checks,ncrs){
+  let html='';
+  html+=`<div class="sec-hdr"><span class="sec-title">${esc(reqTitle)}</span><button class="sec-action" data-modal="${addReqModal}">+ Add Requirement</button></div>`;
+  if(!reqs.length) html+=`<div class="card-sm"><div class="muted fs-13">No requirements added yet.</div></div>`;
+  else {
+    html+=`<div class="card-sm" style="padding:0;overflow:auto"><table class="tbl"><thead><tr><th>Ref</th><th>Requirement</th><th>Category</th><th>Status</th></tr></thead><tbody>`;
+    reqs.forEach(r=>{ html+=`<tr><td class="mono muted">${esc(r.ref)}</td><td style="color:var(--text)">${esc(r.description)}</td><td><span class="tag">${esc(r.category)}</span></td><td>${statusPill(r.status)}</td></tr>`; });
+    html+=`</tbody></table></div>`;
+  }
+
+  html+=`<div class="sec-hdr"><span class="sec-title">${esc(checkTitle)}</span><button class="sec-action" data-modal="${addCheckModal}">+ Record Check</button></div>`;
+  if(!checks.length) html+=`<div class="card-sm"><div class="muted fs-13">No checks recorded yet.</div></div>`;
+  else {
+    checks.slice().reverse().forEach(c=>{
+      html+=`<div class="card-sm">
+        <div class="flex justify-between items-center" style="margin-bottom:5px">
+          <span class="mono muted" style="font-size:11px">${fmtDate(c.date)} · ${esc(c.ref)}</span>
+          ${statusPill(c.result)}
+        </div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px">${esc(c.description)}</div>
+        <div style="font-size:12px;color:var(--text3)">Inspector: ${esc(c.inspector)}</div>
+        ${c.notes?`<div style="font-size:12px;color:var(--text2);margin-top:4px">${esc(c.notes)}</div>`:''}
+      </div>`;
+    });
+  }
+
+  html+=`<div class="sec-hdr"><span class="sec-title">${esc(ncrTitle)}</span><button class="sec-action" data-modal="${addNcrModal}">+ Raise NCR</button></div>`;
+  if(!ncrs||!ncrs.length) html+=`<div class="card-sm"><div class="muted fs-13">No NCRs raised. Good work!</div></div>`;
+  else {
+    html+=`<div class="card-sm" style="padding:0;overflow:auto"><table class="tbl"><thead><tr><th>Ref</th><th>Date</th><th>Description</th><th>Severity</th><th>Status</th></tr></thead><tbody>`;
+    ncrs.forEach(n=>{ html+=`<tr><td class="mono muted">${esc(n.ref)}</td><td class="mono muted" style="font-size:11px">${fmtDate(n.date)}</td><td><div style="color:var(--text);font-weight:600">${esc(n.description)}</div><div style="font-size:11px;color:var(--text3)">${esc(n.action)}</div></td><td>${statusPill(n.severity)}</td><td>${statusPill(n.status)}</td></tr>`; });
+    html+=`</tbody></table></div>`;
+  }
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SAFETY TAB
+// ═══════════════════════════════════════════════════════════════
+function renderSafety(proj){
+  const s = proj.safety;
+  const passCount = s.checks.filter(c=>c.result==='Pass').length;
+  const openInc = s.incidents.filter(i=>i.status==='Open').length;
+  let html = pageHeader(proj.name,'Health & Safety');
+
+  if(openInc>0) html+=`<div class="warn-banner warn-banner-red"><div class="warn-icon">🚨</div>
+    <div><div class="warn-title text-red">${openInc} Open Safety Incident${openInc>1?'s':''}</div>
+    <div class="warn-text">Outstanding incidents require immediate action and must be closed before affected work areas can resume.</div></div></div>`;
+  else html+=`<div class="warn-banner warn-banner-green"><div class="warn-icon">✅</div>
+    <div><div class="warn-title text-green">No Open Incidents</div>
+    <div class="warn-text">All incidents are closed. Maintain regular safety checks and toolbox talks.</div></div></div>`;
+
+  html+=`<div class="stat-grid">
+    <div class="stat-box"><div class="stat-label">Safety Reqs.</div><div class="stat-value text-cyan">${s.requirements.length}</div></div>
+    <div class="stat-box"><div class="stat-label">Inspections</div><div class="stat-value">${s.checks.length}</div></div>
+    <div class="stat-box"><div class="stat-label">Pass Rate</div><div class="stat-value text-green">${s.checks.length?pct(passCount,s.checks.length):0}%</div></div>
+    <div class="stat-box"><div class="stat-label">Open Incidents</div><div class="stat-value ${openInc?'text-red':'text-green'}">${openInc}</div></div>
+  </div>`;
+
+  html += renderCheckSection('Safety Requirements','sReq',s.requirements,'addSReq','addSCheck','Safety Inspections','addIncident','Incident Register',s.checks,s.incidents);
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMMS TAB
+// ═══════════════════════════════════════════════════════════════
+function renderComms(proj){
+  const c = proj.comms;
+  const clients = c.stakeholders.filter(s=>s.type==='client');
+  const contractors = c.stakeholders.filter(s=>s.type==='contractor');
+  const subs = c.stakeholders.filter(s=>s.type==='sub');
+  let html = pageHeader(proj.name,'Communication & Stakeholders');
+
+  html+=`<div class="stat-grid">
+    <div class="stat-box"><div class="stat-label">Client Team</div><div class="stat-value text-cyan">${clients.length}</div></div>
+    <div class="stat-box"><div class="stat-label">Contractors</div><div class="stat-value text-amber">${contractors.length}</div></div>
+    <div class="stat-box"><div class="stat-label">Subcontractors</div><div class="stat-value text-purple">${subs.length}</div></div>
+    <div class="stat-box"><div class="stat-label">Updates Sent</div><div class="stat-value">${c.updates.length}</div></div>
+  </div>`;
+
+  const renderGroup = (arr,label,color) => {
+    if(!arr.length) return '';
+    let g=`<div class="sec-title" style="margin-bottom:8px;margin-top:14px">${label}</div>`;
+    arr.forEach(s=>{
+      g+=`<div class="card-sm flex items-center gap-12">
+        <div style="width:38px;height:38px;border-radius:50%;background:${color}22;border:2px solid ${color}44;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:${color};flex-shrink:0">${s.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:var(--text)">${esc(s.name)}</div>
+          <div style="font-size:11px;color:var(--text3)">${esc(s.role)} · ${esc(s.org)}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <a href="tel:${esc(s.phone)}" style="width:32px;height:32px;border-radius:50%;background:var(--surf2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:15px;text-decoration:none">📞</a>
+          <a href="mailto:${esc(s.email)}" style="width:32px;height:32px;border-radius:50%;background:var(--surf2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:15px;text-decoration:none">✉️</a>
+        </div>
+      </div>`;
+    });
+    return g;
+  };
+
+  html+=`<div class="card">
+    <div class="card-header">
+      <span class="card-title">Project Team & Stakeholders</span>
+      <button class="btn btn-sm btn-primary" data-modal="addStakeholder">+ Add</button>
+    </div>
+    ${renderGroup(clients,'Client Team','var(--cyan)')}
+    ${renderGroup(contractors,'Main Contractor','var(--amber)')}
+    ${renderGroup(subs,'Subcontractors','var(--purple)')}
+  </div>`;
+
+  html+=`<div class="sec-hdr"><span class="sec-title">Project Updates & Reports</span>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="sec-action" data-modal="exportReport">📤 Monthly Report</button>
+      <button class="sec-action" data-modal="composeUpdate">+ Compose</button>
+    </div>
+  </div>`;
+  if(!c.updates.length) html+=`<div class="card-sm"><div class="muted fs-13">No updates sent yet.</div></div>`;
+  c.updates.slice().reverse().forEach(u=>{
+    const recipientLabel = u.recipients.map(r=>r==='client'?'Client Team':r==='contractor'?'Main Contractor':r==='sub'?'Subcontractors':r).join(', ');
+    html+=`<div class="card-sm">
+      <div class="flex justify-between items-center" style="margin-bottom:5px">
+        <span class="mono muted" style="font-size:11px">${fmtDate(u.date)}</span>
+        <span class="pill pill-cyan">${esc(u.type)}</span>
+      </div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:5px">${esc(u.subject)}</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:6px">${esc(u.body)}</div>
+      <div style="font-size:11px;color:var(--text3)">To: ${esc(recipientLabel)} · Sent by: ${esc(u.sentBy)}</div>
+    </div>`;
+  });
+  return html;
+}
+
+function pageHeader(projName, tabName){
+  return `<div style="margin-bottom:16px">
+    <div style="font-size:11px;color:var(--text3);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:3px">${esc(projName)}</div>
+    <div style="font-size:22px;font-weight:900;letter-spacing:-0.03em;color:var(--text)">${esc(tabName)}</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════════════════════════
+function showModal(){
+  const existing = document.querySelector('.overlay');
+  if(existing) existing.remove();
+
+  const div = document.createElement('div');
+  div.className='overlay';
+  div.id='modalOverlay';
+  div.innerHTML = buildModal(modalState);
+  document.body.appendChild(div);
+  div.addEventListener('click', e => { if(e.target===div){ modalState=null; div.remove(); }});
+  div.querySelector('#modalClose')?.addEventListener('click',()=>{ modalState=null; div.remove(); });
+  div.querySelector('#modalSave')?.addEventListener('click',()=>{ handleModalSave(); div.remove(); });
+
+  // Drop zone listeners for import modal
+  const dz = div.querySelector('.drop-zone');
+  if(dz){
+    dz.addEventListener('click',()=>document.getElementById('xlsxFileInput').click());
+    dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});
+    dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+    dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f){handleXlsxImport(f);div.remove();}});
+    document.getElementById('xlsxFileInput').onchange=e=>{if(e.target.files[0]){handleXlsxImport(e.target.files[0]);div.remove();}e.target.value='';};
+    div.querySelector('#btnDownloadTemplate')?.addEventListener('click', downloadTemplate);
+  }
+
+  // Segment switcher for new project modal
+  div.querySelectorAll('.seg-opt[data-seg]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      div.querySelectorAll('.seg-opt[data-seg]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const seg=btn.dataset.seg;
+      const modeInput=div.querySelector('#f_mode');if(modeInput)modeInput.value=seg;
+      const cf=div.querySelector('#cloneFromField');if(cf)cf.style.display=seg==='clone'?'block':'none';
+    });
+  });
+
+  const firstInput = div.querySelector('input:not([type=file]),select,textarea');
+  if(firstInput) setTimeout(()=>firstInput.focus(),100);
+}
+
+function wrap(title, body, btn='Save'){
+  return `<div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <button class="modal-close" id="modalClose">×</button>
+    <div class="modal-title">${title}</div>
+    ${body}
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn btn-primary w-full" id="modalSave">${btn}</button>
+    </div>
+  </div>`;
+}
+
+function buildModal(m){
+  // ── COPILOT THRESHOLD EDITOR ──
+  if(m==='editThresholds'){
+    const proj = activeProject();
+    const th = getThresholds(proj);
+    return wrap('⚙️ Sensor Thresholds', `
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">Set the level at which each sensor fires a coordinated Copilot response. Tighten for high-risk projects, loosen for early-stage.</div>
+      <div class="threshold-row">
+        <div class="threshold-name">💰 Budget Variance</div>
+        <input class="threshold-input" id="th_budget" type="number" value="${th.budgetVariancePct}"/>
+        <div class="threshold-unit">%</div>
+      </div>
+      <div class="threshold-row">
+        <div class="threshold-name">📅 Schedule Slip</div>
+        <input class="threshold-input" id="th_schedule" type="number" value="${th.scheduleSlipPct}"/>
+        <div class="threshold-unit">%</div>
+      </div>
+      <div class="threshold-row">
+        <div class="threshold-name">✅ Open NCRs</div>
+        <input class="threshold-input" id="th_ncr" type="number" value="${th.openNCRs}"/>
+        <div class="threshold-unit">count</div>
+      </div>
+      <div class="threshold-row">
+        <div class="threshold-name">🦺 Open Incidents</div>
+        <input class="threshold-input" id="th_inc" type="number" value="${th.openIncidents}"/>
+        <div class="threshold-unit">count</div>
+      </div>
+      <div class="threshold-row">
+        <div class="threshold-name">📋 Scope Creep</div>
+        <input class="threshold-input" id="th_scope" type="number" value="${th.scopeCreepScore}"/>
+        <div class="threshold-unit">count</div>
+      </div>
+    `, 'Save Thresholds');
+  }
+
+  // ── NEW PROJECT (with clone option) ──
+  if(m==='newProject'){
+    const hasPrj = STATE.projects.length > 0;
+    const projOpts = STATE.projects.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+    return wrap('New Project', `
+      <div class="segment">
+        <button class="seg-opt active" data-seg="scratch">Start Fresh</button>
+        ${hasPrj?`<button class="seg-opt" data-seg="clone">Copy from Existing</button>`:''}
+      </div>
+      <div id="cloneFromField" style="display:none" class="field">
+        <label>Copy data from</label>
+        <select id="f_cloneFrom">${projOpts}</select>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Copies scope items, budget structure, requirements & stakeholders. Clears historical data.</div>
+      </div>
+      <div class="field"><label>Project Name</label><input id="f_name" placeholder="e.g. Riverside Office Block"/></div>
+      <div class="field"><label>Client / Employer</label><input id="f_client" placeholder="e.g. ABC Properties LLC"/></div>
+      <div class="field"><label>Location</label><input id="f_loc" placeholder="e.g. Houston, TX"/></div>
+      <div class="field-row">
+        <div class="field"><label>Start Date</label><input id="f_start" type="date"/></div>
+        <div class="field"><label>End Date</label><input id="f_end" type="date"/></div>
+      </div>
+      <div class="field"><label>Contract Sum ($)</label><input id="f_budget" type="number" placeholder="e.g. 3500000"/></div>
+      <input type="hidden" id="f_mode" value="scratch"/>
+    `, 'Create Project');
+  }
+
+  // ── IMPORT EXCEL ──
+  if(m==='importExcel'){
+    const importTypeSelect = `<div class="field"><label>What to import</label>
+      <select id="f_importType">
+        <option value="budget">Budget breakdown (dimension codes)</option>
+        <option value="schedule">Schedule tasks</option>
+        <option value="stakeholders">Stakeholders / contacts</option>
+        <option value="scope">Scope items</option>
+      </select></div>`;
+    return `<div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <button class="modal-close" id="modalClose">×</button>
+      <div class="modal-title">📥 Import from Excel</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5">Upload an <strong>.xlsx</strong> or <strong>.csv</strong> file. The app reads your columns and imports directly into the active project.</p>
+      ${importTypeSelect}
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-zone-icon">📂</div>
+        <div class="drop-zone-text">Drop your file here, or click to browse</div>
+        <div class="drop-zone-sub">.xlsx · .xls · .csv accepted</div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:11px;color:var(--text3);line-height:1.8">
+        <div style="font-weight:700;color:var(--text2);margin-bottom:4px">Expected column headers (row 1):</div>
+        <div><strong style="color:var(--amber)">Budget:</strong> <span class="mono">Code | Area | Budget | Spent | Committed</span></div>
+        <div><strong style="color:var(--amber)">Schedule:</strong> <span class="mono">Name | PlannedStart | PlannedEnd | Status</span></div>
+        <div><strong style="color:var(--amber)">Stakeholders:</strong> <span class="mono">Name | Role | Organisation | Email | Phone | Type</span></div>
+        <div><strong style="color:var(--amber)">Scope:</strong> <span class="mono">Title | Included</span></div>
+      </div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-secondary w-full" id="modalClose">Cancel</button>
+        <button class="btn btn-amber w-full" id="btnDownloadTemplate">⬇ Download Template</button>
+      </div>
+    </div>`;
+  }
+
+  // ── EXPORT MONTHLY REPORT ──
+  if(m==='exportReport'){
+    const projOpts = STATE.projects.map(p=>`
+      <div class="check-item">
+        <input type="checkbox" class="expProj" value="${p.id}" id="ep_${p.id}" checked/>
+        <label for="ep_${p.id}">${esc(p.name)}</label>
+      </div>`).join('');
+    return `<div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <button class="modal-close" id="modalClose">×</button>
+      <div class="modal-title">📤 Monthly Progress Report</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5">Generates a multi-tab Excel report — one sheet per project covering all 6 PM elements. Also logged automatically in each project's Comms tab.</p>
+      <div class="field"><label>Projects to include</label><div class="check-list">${projOpts}</div></div>
+      <div class="field-row">
+        <div class="field"><label>Report Month</label><input id="f_reportMonth" type="month" value="${new Date().toISOString().slice(0,7)}"/></div>
+        <div class="field"><label>Prepared by</label><input id="f_preparedBy" placeholder="Your name"/></div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:4px">The report downloads as <strong>CP-Manager-Report-[month].xlsx</strong> and is also saved in each project's Communication log.</div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-secondary w-full" id="modalClose">Cancel</button>
+        <button class="btn btn-primary w-full" id="modalSave">📥 Download Report</button>
+      </div>
+    </div>`;
+  }
+
+  // ── STANDARD MODALS ──
+  if(m==='editScopeDesc') return wrap('Edit Scope Statement',`
+    <div class="field"><label>Scope Description</label><textarea id="f_scopeDesc" rows="6">${esc(activeProject().scope.description)}</textarea></div>`);
+
+  if(m==='addScopeItem') return wrap('Add Scope Item',`
+    <div class="field"><label>Description</label><input id="f_scopeTitle" placeholder="e.g. Basement waterproofing"/></div>
+    <div class="field"><label>Included in Scope?</label><select id="f_scopeIncluded"><option value="1">Yes — Included</option><option value="0">No — Excluded</option></select></div>`);
+
+  if(m==='addCreep') return wrap('Log Scope Change',`
+    <div class="field"><label>Date</label><input id="f_date" type="date" value="${today()}"/></div>
+    <div class="field"><label>Change Description</label><textarea id="f_desc" rows="3" placeholder="Describe the scope change…"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label>Cost Impact ($)</label><input id="f_cost" type="number" placeholder="0"/></div>
+      <div class="field"><label>Time Impact</label><input id="f_time" placeholder="e.g. +2 weeks"/></div>
+    </div>
+    <div class="field"><label>Status</label><select id="f_status"><option>Open</option><option>Approved</option><option>Rejected</option></select></div>`);
+
+  if(m==='addTask') return wrap('Add Schedule Task',`
+    <div class="field"><label>Task Name</label><input id="f_name" placeholder="e.g. Roof Membrane"/></div>
+    <div class="field-row">
+      <div class="field"><label>Planned Start</label><input id="f_start" type="date"/></div>
+      <div class="field"><label>Planned End</label><input id="f_end" type="date"/></div>
+    </div>
+    <div class="field"><label>Status</label><select id="f_status"><option value="pending">Pending</option><option value="in-progress">In Progress</option><option value="complete">Complete</option></select></div>`);
+
+  if(m==='addDelay') return wrap('Log Delay',`
+    <div class="field"><label>Date</label><input id="f_date" type="date" value="${today()}"/></div>
+    <div class="field"><label>Cause of Delay</label><textarea id="f_cause" rows="2" placeholder="Describe what caused the delay…"></textarea></div>
+    <div class="field"><label>Programme Impact</label><input id="f_impact" placeholder="e.g. 3 weeks"/></div>
+    <div class="field"><label>Proposed Solution / Mitigation</label><textarea id="f_solution" rows="2" placeholder="How will this be recovered?"></textarea></div>`);
+
+  if(m==='addBudgetChange') return wrap('Add Change Order',`
+    <div class="field"><label>Description</label><input id="f_desc" placeholder="e.g. Variation for additional drainage"/></div>
+    <div class="field"><label>Amount ($)</label><input id="f_amount" type="number" placeholder="e.g. 25000"/></div>
+    <div class="field"><label>Type</label><select id="f_type"><option value="approved_changes">Approved Change</option><option value="spent">Additional Spend</option></select></div>`);
+
+  if(m==='addBudgetLine') return wrap('Add Budget Line',`
+    <div class="field-row">
+      <div class="field"><label>Dimension Code</label><input id="f_code" placeholder="e.g. 09"/></div>
+      <div class="field"><label>Area / Description</label><input id="f_area" placeholder="e.g. Drainage"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Budget ($)</label><input id="f_budget" type="number" placeholder="0"/></div>
+      <div class="field"><label>Spent ($)</label><input id="f_spent" type="number" placeholder="0"/></div>
+    </div>
+    <div class="field"><label>Committed ($)</label><input id="f_committed" type="number" placeholder="0"/></div>`);
+
+  const reqFields = (prefix) => `
+    <div class="field-row">
+      <div class="field"><label>Reference</label><input id="f_ref" placeholder="e.g. ${prefix}-004"/></div>
+      <div class="field"><label>Category</label><input id="f_cat" placeholder="e.g. Structural"/></div>
+    </div>
+    <div class="field"><label>Requirement Description</label><textarea id="f_desc" rows="3"></textarea></div>`;
+
+  const checkFields = () => `
+    <div class="field-row">
+      <div class="field"><label>Date</label><input id="f_date" type="date" value="${today()}"/></div>
+      <div class="field"><label>Reference</label><input id="f_ref" placeholder="e.g. QC-004"/></div>
+    </div>
+    <div class="field"><label>Description of Check</label><input id="f_desc" placeholder="e.g. Concrete pour inspection"/></div>
+    <div class="field-row">
+      <div class="field"><label>Result</label><select id="f_result"><option>Pass</option><option>Fail</option></select></div>
+      <div class="field"><label>Inspector</label><input id="f_inspector" placeholder="Name"/></div>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="f_notes" rows="2"></textarea></div>`;
+
+  const ncrFields = (type) => `
+    <div class="field-row">
+      <div class="field"><label>Date</label><input id="f_date" type="date" value="${today()}"/></div>
+      <div class="field"><label>Reference</label><input id="f_ref" placeholder="e.g. ${type==='safety'?'INC':'NCR'}-002"/></div>
+    </div>
+    <div class="field"><label>Description</label><textarea id="f_desc" rows="2"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label>Severity</label><select id="f_sev"><option>Minor</option><option>Major</option><option>Critical</option>${type==='safety'?'<option>High</option>':''}</select></div>
+      <div class="field"><label>Status</label><select id="f_status"><option>Open</option><option>Closed</option></select></div>
+    </div>
+    <div class="field"><label>Corrective Action</label><textarea id="f_action" rows="2"></textarea></div>`;
+
+  if(m==='addQReq')    return wrap('Add Quality Requirement', reqFields('QR'));
+  if(m==='addQCheck')  return wrap('Record Quality Check', checkFields());
+  if(m==='addNCR')     return wrap('Raise Non-Conformance Report', ncrFields('quality'));
+  if(m==='addSReq')    return wrap('Add Safety Requirement', reqFields('SR'));
+  if(m==='addSCheck')  return wrap('Record Safety Inspection', checkFields());
+  if(m==='addIncident')return wrap('Log Safety Incident', ncrFields('safety'));
+
+  if(m==='addStakeholder') return wrap('Add Stakeholder / Contact',`
+    <div class="field"><label>Name</label><input id="f_name" placeholder="Full name or company"/></div>
+    <div class="field-row">
+      <div class="field"><label>Role</label><input id="f_role" placeholder="e.g. Site Manager"/></div>
+      <div class="field"><label>Organisation</label><input id="f_org" placeholder="e.g. CoreBuild LLC"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Email</label><input id="f_email" type="email"/></div>
+      <div class="field"><label>Phone</label><input id="f_phone" type="tel"/></div>
+    </div>
+    <div class="field"><label>Type</label><select id="f_type"><option value="client">Client Team</option><option value="contractor">Main Contractor</option><option value="sub">Subcontractor</option></select></div>`);
+
+  if(m==='composeUpdate') {
+    const proj = activeProject();
+    return wrap('Compose Project Update',`
+      <div class="field"><label>Update Type</label><select id="f_type"><option>Progress Report</option><option>Site Instruction</option><option>RFI Response</option><option>Change Notice</option><option>Meeting Minutes</option></select></div>
+      <div class="field"><label>Recipients</label><select id="f_recipients" multiple style="height:80px"><option value="client" selected>Client Team</option><option value="contractor">Main Contractor</option><option value="sub">Subcontractors</option></select><div style="font-size:11px;color:var(--text3);margin-top:3px">Hold Ctrl/Cmd to select multiple</div></div>
+      <div class="field"><label>Subject</label><input id="f_subject" placeholder="e.g. Monthly Progress Report – January 2025"/></div>
+      <div class="field"><label>Message / Report Body</label><textarea id="f_body" rows="5" placeholder="Write your update…"></textarea></div>
+      <div class="field"><label>Sent by</label><input id="f_sentby" placeholder="Your name" value="${esc(proj.comms.stakeholders[0]?.name||'')}"/></div>
+    `,'Send Update');
+  }
+
+  return '';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODAL SAVE HANDLERS
+// ═══════════════════════════════════════════════════════════════
+function gv(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
+function gvn(id){ return parseFloat(gv(id))||0; }
+
+function handleModalSave(){
+  const m = modalState; modalState=null;
+  const proj = activeProject();
+
+  if(m==='editThresholds'){
+    const proj = activeProject();
+    proj._copilotThresholds = {
+      budgetVariancePct: parseFloat(document.getElementById('th_budget')?.value)||10,
+      scheduleSlipPct:   parseFloat(document.getElementById('th_schedule')?.value)||8,
+      openNCRs:          parseInt(document.getElementById('th_ncr')?.value)||2,
+      openIncidents:     parseInt(document.getElementById('th_inc')?.value)||1,
+      scopeCreepScore:   parseInt(document.getElementById('th_scope')?.value)||2,
+    };
+    showToast('Thresholds updated — Copilot re-evaluating…');
+    saveState(); render(); return;
+  }
+
+  if(m==='newProject'){
+    const mode = gv('f_mode')||'scratch';
+    const name = gv('f_name'); if(!name){showToast('Project name required');return;}
+    let newP;
+    if(mode==='clone'){
+      const srcId = gv('f_cloneFrom');
+      const src = STATE.projects.find(p=>p.id===srcId);
+      if(src){
+        newP = deepClone(src);
+        newP.id=uid(); newP.name=name; newP.client=gv('f_client')||newP.client;
+        newP.location=gv('f_loc')||newP.location; newP.startDate=gv('f_start'); newP.endDate=gv('f_end');
+        const nb=gvn('f_budget'); if(nb){newP.budget=nb; newP.budget_data.original=nb;}
+        // Reset transactional data, keep templates
+        newP.budget_data.approved_changes=0; newP.budget_data.spent=0; newP.budget_data.committed=0;
+        newP.budget_data.breakdown=newP.budget_data.breakdown.map(b=>({...b,id:uid(),spent:0,committed:0}));
+        newP.schedule.tasks=[]; newP.schedule.delayLog=[]; newP.schedule.overallProgress=0; newP.schedule.plannedProgress=0;
+        newP.quality.checks=[]; newP.quality.ncrs=[];
+        newP.safety.checks=[]; newP.safety.incidents=[];
+        newP.comms.updates=[]; newP.scope.creepItems=[];
+        // Give new IDs to all requirement/scope/stakeholder items
+        newP.scope.items=newP.scope.items.map(i=>({...i,id:uid()}));
+        newP.quality.requirements=newP.quality.requirements.map(r=>({...r,id:uid()}));
+        newP.safety.requirements=newP.safety.requirements.map(r=>({...r,id:uid()}));
+        newP.comms.stakeholders=newP.comms.stakeholders.map(s=>({...s,id:uid()}));
+      }
+    }
+    if(!newP){
+      const b=gvn('f_budget');
+      newP={id:uid(),name,client:gv('f_client'),location:gv('f_loc'),startDate:gv('f_start'),endDate:gv('f_end'),budget:b,status:'active',
+        scope:{description:'',items:[],creepItems:[]},
+        schedule:{overallProgress:0,plannedProgress:0,tasks:[],delayLog:[]},
+        budget_data:{original:b,approved_changes:0,spent:0,committed:0,breakdown:[],overspendLog:[]},
+        quality:{requirements:[],checks:[],ncrs:[]},
+        safety:{requirements:[],checks:[],incidents:[]},
+        comms:{stakeholders:[],updates:[]}};
+    }
+    STATE.projects.push(newP); STATE.activeProject=newP.id; STATE.activeTab='scope';
+    showToast(`Project "${name}" created!`);
+
+  } else if(m==='exportReport'){
+    doExportReport(); return;
+
+  } else if(m==='editScopeDesc'){
+    proj.scope.description=gv('f_scopeDesc');
+  } else if(m==='addScopeItem'){
+    proj.scope.items.push({id:uid(),title:gv('f_scopeTitle'),included:gv('f_scopeIncluded')==='1'});
+  } else if(m==='addCreep'){
+    proj.scope.creepItems.push({id:uid(),date:gv('f_date'),description:gv('f_desc'),costImpact:gvn('f_cost'),timeImpact:gv('f_time'),status:gv('f_status')});
+    showToast('Scope change logged');
+  } else if(m==='addTask'){
+    proj.schedule.tasks.push({id:uid(),name:gv('f_name'),plannedStart:gv('f_start'),plannedEnd:gv('f_end'),actualStart:null,actualEnd:null,status:gv('f_status')});
+  } else if(m==='addDelay'){
+    proj.schedule.delayLog.push({id:uid(),date:gv('f_date'),cause:gv('f_cause'),impact:gv('f_impact'),solution:gv('f_solution')});
+    showToast('Delay logged');
+  } else if(m==='addBudgetChange'){
+    const field=gv('f_type'); proj.budget_data[field]=(proj.budget_data[field]||0)+gvn('f_amount');
+    showToast('Change order added');
+  } else if(m==='addBudgetLine'){
+    proj.budget_data.breakdown.push({id:uid(),code:gv('f_code'),area:gv('f_area'),budget:gvn('f_budget'),spent:gvn('f_spent'),committed:gvn('f_committed')});
+  } else if(m==='addQReq'){
+    proj.quality.requirements.push({id:uid(),ref:gv('f_ref'),description:gv('f_desc'),category:gv('f_cat'),status:'active'});
+  } else if(m==='addQCheck'){
+    proj.quality.checks.push({id:uid(),date:gv('f_date'),ref:gv('f_ref'),description:gv('f_desc'),result:gv('f_result'),inspector:gv('f_inspector'),notes:gv('f_notes')});
+  } else if(m==='addNCR'){
+    proj.quality.ncrs.push({id:uid(),date:gv('f_date'),ref:gv('f_ref'),description:gv('f_desc'),severity:gv('f_sev'),status:gv('f_status'),action:gv('f_action')});
+  } else if(m==='addSReq'){
+    proj.safety.requirements.push({id:uid(),ref:gv('f_ref'),description:gv('f_desc'),category:gv('f_cat'),status:'active'});
+  } else if(m==='addSCheck'){
+    proj.safety.checks.push({id:uid(),date:gv('f_date'),ref:gv('f_ref'),description:gv('f_desc'),result:gv('f_result'),inspector:gv('f_inspector'),notes:gv('f_notes')});
+  } else if(m==='addIncident'){
+    proj.safety.incidents.push({id:uid(),date:gv('f_date'),ref:gv('f_ref'),description:gv('f_desc'),severity:gv('f_sev'),status:gv('f_status'),action:gv('f_action')});
+    showToast('Incident logged');
+  } else if(m==='addStakeholder'){
+    proj.comms.stakeholders.push({id:uid(),name:gv('f_name'),role:gv('f_role'),org:gv('f_org'),email:gv('f_email'),phone:gv('f_phone'),type:gv('f_type')});
+  } else if(m==='composeUpdate'){
+    const sel=document.getElementById('f_recipients');
+    const recipients=sel?Array.from(sel.selectedOptions).map(o=>o.value):['client'];
+    proj.comms.updates.push({id:uid(),date:today(),type:gv('f_type'),recipients,subject:gv('f_subject'),body:gv('f_body'),sentBy:gv('f_sentby')});
+    showToast('Update sent!');
+  }
+
+  saveState(); render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXCEL IMPORT
+// ═══════════════════════════════════════════════════════════════
+function handleXlsxImport(file){
+  const importType = document.getElementById('f_importType')?.value || 'budget';
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'binary'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+      const proj = activeProject();
+      if(!rows.length){ showToast('No data found in file'); return; }
+      let count = 0;
+
+      if(importType==='budget'){
+        rows.forEach(r=>{
+          const area = String(r['Area']||r['Description']||r['area']||'').trim();
+          if(area){
+            proj.budget_data.breakdown.push({id:uid(),
+              code:String(r['Code']||r['code']||'').trim(),
+              area, budget:parseFloat(r['Budget']||r['budget']||0)||0,
+              spent:parseFloat(r['Spent']||r['spent']||0)||0,
+              committed:parseFloat(r['Committed']||r['committed']||0)||0});
+            count++;
+          }
+        });
+      } else if(importType==='schedule'){
+        rows.forEach(r=>{
+          const name=String(r['Name']||r['Task']||r['name']||'').trim();
+          if(name){
+            const st=String(r['Status']||r['status']||'pending').trim().toLowerCase();
+            proj.schedule.tasks.push({id:uid(),name,
+              plannedStart:String(r['PlannedStart']||r['Start']||'').trim(),
+              plannedEnd:String(r['PlannedEnd']||r['End']||'').trim(),
+              actualStart:null,actualEnd:null,
+              status:['pending','in-progress','complete'].includes(st)?st:'pending'});
+            count++;
+          }
+        });
+      } else if(importType==='stakeholders'){
+        rows.forEach(r=>{
+          const name=String(r['Name']||r['name']||'').trim();
+          if(name){
+            proj.comms.stakeholders.push({id:uid(),name,
+              role:String(r['Role']||r['role']||'').trim(),
+              org:String(r['Organisation']||r['Organization']||r['org']||'').trim(),
+              email:String(r['Email']||r['email']||'').trim(),
+              phone:String(r['Phone']||r['phone']||'').trim(),
+              type:String(r['Type']||r['type']||'contractor').trim().toLowerCase()});
+            count++;
+          }
+        });
+      } else if(importType==='scope'){
+        rows.forEach(r=>{
+          const title=String(r['Title']||r['Description']||r['title']||'').trim();
+          if(title){
+            const inc=String(r['Included']||r['included']||'yes').toLowerCase();
+            proj.scope.items.push({id:uid(),title,included:inc!=='no'&&inc!=='false'&&inc!=='0'});
+            count++;
+          }
+        });
+      }
+
+      showToast(`✅ Imported ${count} row${count!==1?'s':''} into ${importType}`);
+      saveState(); render();
+    } catch(err){ showToast('Error reading file: '+err.message); }
+  };
+  reader.readAsBinaryString(file);
+}
+
+function downloadTemplate(){
+  const importType = document.getElementById('f_importType')?.value||'budget';
+  let data, sheetName;
+  if(importType==='budget'){
+    data=[['Code','Area','Budget','Spent','Committed'],['01','Substructure',480000,0,0],['02','Structural Frame',920000,0,0],['03','MEP Services',650000,0,0]];
+    sheetName='Budget';
+  } else if(importType==='schedule'){
+    data=[['Name','PlannedStart','PlannedEnd','Status'],['Substructure','2025-01-01','2025-03-31','pending'],['Structural Frame','2025-04-01','2025-07-31','pending']];
+    sheetName='Schedule';
+  } else if(importType==='stakeholders'){
+    data=[['Name','Role','Organisation','Email','Phone','Type'],['John Smith','Site Manager','CoreBuild LLC','j.smith@core.com','555-0100','contractor'],['Jane Doe','Client Rep','ABC Corp','j.doe@abc.com','555-0200','client']];
+    sheetName='Stakeholders';
+  } else {
+    data=[['Title','Included'],['Substructure & Foundations','yes'],['MEP Services (Full)','yes'],['Landscaping','no']];
+    sheetName='Scope';
+  }
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=data[0].map(()=>({wch:22}));
+  XLSX.utils.book_append_sheet(wb,ws,sheetName);
+  XLSX.writeFile(wb,`cp-manager-template-${importType}.xlsx`);
+  showToast('Template downloaded!');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MONTHLY REPORT EXPORT
+// ═══════════════════════════════════════════════════════════════
+function doExportReport(){
+  const selected = Array.from(document.querySelectorAll('.expProj:checked')).map(el=>el.value);
+  const month = gv('f_reportMonth') || new Date().toISOString().slice(0,7);
+  const preparedBy = gv('f_preparedBy') || 'CP Manager';
+  if(!selected.length){ showToast('Select at least one project'); return; }
+
+  const projects = STATE.projects.filter(p=>selected.includes(p.id));
+  const wb = XLSX.utils.book_new();
+
+  // ── Cover / Summary sheet ──
+  const coverRows = [
+    ['CP MANAGER — MONTHLY PROGRESS REPORT'],[''],
+    ['Report Period:', month],['Prepared By:', preparedBy],
+    ['Generated:', new Date().toLocaleDateString('en-US')],
+    ['Projects:', projects.map(p=>p.name).join(', ')],[''],
+    ['PROJECT','STATUS','CONTRACT SUM','SPENT','FORECAST','SCHEDULE %','PLANNED %','BUDGET STATUS','SCHEDULE STATUS']
+  ];
+  projects.forEach(p=>{
+    const bd=p.budget_data, sch=p.schedule;
+    const contract=bd.original+bd.approved_changes;
+    const forecast=bd.spent+bd.committed;
+    coverRows.push([
+      p.name, p.status, fmtGBP(contract), fmtGBP(bd.spent), fmtGBP(forecast),
+      sch.overallProgress+'%', sch.plannedProgress+'%',
+      forecast>contract?'⚠ OVER BUDGET':'✓ On Budget',
+      sch.overallProgress<sch.plannedProgress-5?'⚠ DELAYED':'✓ On Track'
+    ]);
+  });
+  const covWs=XLSX.utils.aoa_to_sheet(coverRows);
+  covWs['!cols']=[{wch:36},{wch:10},{wch:14},{wch:14},{wch:14},{wch:12},{wch:12},{wch:14},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,covWs,'Summary');
+
+  // ── One sheet per project ──
+  projects.forEach(p=>{
+    const bd=p.budget_data, sch=p.schedule;
+    const contract=bd.original+bd.approved_changes;
+    const forecast=bd.spent+bd.committed;
+    const isOver=forecast>contract;
+    const isDelayed=sch.overallProgress<sch.plannedProgress-5;
+    const qPassPct=sch.overallProgress;
+    const rows=[
+      [`PROJECT REPORT: ${p.name}`],
+      ['Client:', p.client, 'Location:', p.location],
+      ['Start:', fmtDate(p.startDate), 'End:', fmtDate(p.endDate)],[''],
+
+      ['━━ SCOPE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],
+      ['Scope Statement:', p.scope.description],
+      ['Included Items:', p.scope.items.filter(i=>i.included).map(i=>i.title).join(' | ')],
+      ['Scope Changes Logged:', p.scope.creepItems.length],
+      p.scope.creepItems.length?['Latest Change:', p.scope.creepItems[p.scope.creepItems.length-1]?.description||'']:null,[''],
+
+      ['━━ SCHEDULE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],
+      ['Actual Progress:', sch.overallProgress+'%', 'Planned Progress:', sch.plannedProgress+'%'],
+      ['Variance:', (sch.overallProgress-sch.plannedProgress)+'%', 'Status:', isDelayed?'⚠ DELAYED':'✓ On Track'],
+      ['Delays Logged:', sch.delayLog.length],
+      sch.delayLog.length?['Latest Delay Cause:', sch.delayLog[sch.delayLog.length-1].cause, 'Impact:', sch.delayLog[sch.delayLog.length-1].impact]:null,
+      sch.delayLog.length?['Mitigation:', sch.delayLog[sch.delayLog.length-1].solution]:null,[''],
+
+      ['━━ BUDGET ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],
+      ['Original Contract:', fmtGBP(bd.original), 'Approved Changes:', fmtGBP(bd.approved_changes)],
+      ['Contract Sum:', fmtGBP(contract), 'Spent to Date:', fmtGBP(bd.spent)],
+      ['Committed:', fmtGBP(bd.committed), 'Forecast Final:', fmtGBP(forecast)],
+      ['Variance:', fmtGBP(contract-forecast), 'Status:', isOver?'⚠ OVER BUDGET':'✓ Within Budget'],[''],
+      ['Dimension Code Breakdown:'],
+      ['Code','Area','Budget','Spent','Committed','Variance','Status'],
+      ...bd.breakdown.map(l=>[l.code,l.area,fmtGBP(l.budget),fmtGBP(l.spent),fmtGBP(l.committed),fmtGBP(l.budget-l.spent-l.committed),(l.budget-l.spent-l.committed)<0?'OVER':'OK']),[''],
+
+      ['━━ QUALITY ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],
+      ['Requirements:', p.quality.requirements.length, 'Checks:', p.quality.checks.length],
+      ['Pass Rate:', p.quality.checks.length?pct(p.quality.checks.filter(c=>c.result==='Pass').length,p.quality.checks.length)+'%':'N/A', 'Open NCRs:', p.quality.ncrs.filter(n=>n.status==='Open').length],
+      p.quality.ncrs.length?['NCR Register — Ref','Date','Description','Severity','Status']:null,
+      ...p.quality.ncrs.map(n=>[n.ref, fmtDate(n.date), n.description, n.severity, n.status]),[''],
+
+      ['━━ SAFETY ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],
+      ['Requirements:', p.safety.requirements.length, 'Inspections:', p.safety.checks.length],
+      ['Pass Rate:', p.safety.checks.length?pct(p.safety.checks.filter(c=>c.result==='Pass').length,p.safety.checks.length)+'%':'N/A', 'Open Incidents:', p.safety.incidents.filter(i=>i.status==='Open').length],
+      p.safety.incidents.length?['Incident Register — Ref','Date','Description','Severity','Status']:null,
+      ...p.safety.incidents.map(i=>[i.ref, fmtDate(i.date), i.description, i.severity, i.status]),[''],
+
+      ['━━ COMMUNICATIONS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],
+      ['Stakeholders:', p.comms.stakeholders.length, 'Updates Sent:', p.comms.updates.length],
+      p.comms.updates.length?['Latest Update:', p.comms.updates[p.comms.updates.length-1].subject]:['Latest Update:','None yet'],
+      [''],['━━ END OF REPORT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],
+    ].filter(Boolean);
+
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:28},{wch:40},{wch:20},{wch:20}];
+    const tabName=p.name.slice(0,28).replace(/[\\/*?:\[\]]/g,'_');
+    XLSX.utils.book_append_sheet(wb,ws,tabName);
+
+    // Log in comms
+    p.comms.updates.push({id:uid(),date:today(),type:'Progress Report',
+      recipients:['client','contractor'],
+      subject:`Monthly Progress Report – ${month}`,
+      body:`Auto-generated monthly report for ${month}. Schedule: ${sch.overallProgress}% vs planned ${sch.plannedProgress}%. Budget: ${isOver?'OVER by '+fmtGBP(forecast-contract):'Within budget, headroom '+fmtGBP(contract-forecast)}. Open NCRs: ${p.quality.ncrs.filter(n=>n.status==='Open').length}. Open Incidents: ${p.safety.incidents.filter(i=>i.status==='Open').length}.`,
+      sentBy:preparedBy});
+  });
+
+  const filename=`CP-Manager-Report-${month}.xlsx`;
+  XLSX.writeFile(wb,filename);
+  showToast(`Report downloaded: ${filename}`);
+  saveState(); render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EVENT DELEGATION
+// ═══════════════════════════════════════════════════════════════
+function attachListeners(){
+  document.getElementById('projSelect')?.addEventListener('change', e=>{
+    STATE.activeProject=e.target.value; render();
+  });
+
+  ['btnNewProj','btnNewProj2'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('click',()=>{ modalState='newProject'; showModal(); });
+  });
+
+  document.querySelectorAll('[data-tab]').forEach(el=>{
+    el.addEventListener('click',()=>{ STATE.activeTab=el.dataset.tab; render(); });
+  });
+
+  document.querySelectorAll('[data-modal]').forEach(el=>{
+    el.addEventListener('click',()=>{ modalState=el.dataset.modal; showModal(); });
+  });
+
+  document.querySelectorAll('[data-open-project]').forEach(el=>{
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      STATE.activeProject = el.dataset.openProject;
+      STATE.activeTab = el.dataset.gotoTab || 'scope';
+      render();
+    });
+  });
+
+  document.querySelectorAll('[data-clone-project]').forEach(el=>{
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      // Pre-select that project as the clone source then open new project modal in clone mode
+      STATE.activeProject = el.dataset.cloneProject;
+      modalState='newProject';
+      showModal();
+      // Auto-switch to clone tab after modal opens
+      setTimeout(()=>{
+        const cloneBtn=document.querySelector('.seg-opt[data-seg="clone"]');
+        if(cloneBtn){ cloneBtn.click(); }
+        const sel=document.getElementById('f_cloneFrom');
+        if(sel) sel.value=el.dataset.cloneProject;
+      },80);
+    });
+  });
+}
+
+function buildModal(m){
+  const wrap = (title, body, btn='Save') => `<div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <button class="modal-close" id="modalClose">×</button>
+    <div class="modal-title">${title}</div>
+    ${body}
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn btn-primary w-full" id="modalSave">${btn}</button>
+    </div>
+  </div>`;
+
+  if(m==='newProject') return wrap('Add New Project',`
+    <div class="field"><label>Project Name</label><input id="f_name" placeholder="e.g. Harbourside Office Block"/></div>
+    <div class="field"><label>Client / Employer</label><input id="f_client" placeholder="e.g. ABC Properties Ltd"/></div>
+    <div class="field"><label>Location</label><input id="f_loc" placeholder="e.g. London, UK"/></div>
+    <div class="field-row">
+      <div class="field"><label>Start Date</label><input id="f_start" type="date"/></div>
+      <div class="field"><label>End Date</label><input id="f_end" type="date"/></div>
+    </div>
+    <div class="field"><label>Contract Sum (£)</label><input id="f_budget" type="number" placeholder="e.g. 3500000"/></div>
+  `,'Create Project');
+
+  if(m==='editScopeDesc') return wrap('Edit Scope Statement',`
+    <div class="field"><label>Scope Description</label><textarea id="f_scopeDesc" rows="6">${esc(activeProject().scope.description)}</textarea></div>
+  `);
+
+  if(m==='addScopeItem') return wrap('Add Scope Item',`
+    <div class="field"><label>Description</label><input id="f_scopeTitle" placeholder="e.g. Basement waterproofing"/></div>
+    <div class="field"><label>Included in Scope?</label><select id="f_scopeIncluded"><option value="1">Yes — Included</option><option value="0">No — Excluded</option></select></div>
+  `);
+
+  if(m==='addCreep') return wrap('Log Scope Change',`
+    <div class="field"><label>Date</label><input id="f_date" type="date" value="${today()}"/></div>
+    <div class="field"><label>Change Description</label><textarea id="f_desc" rows="3" placeholder="Describe the scope change…"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label>Cost Impact (£)</label><input id="f_cost" type="number" placeholder="0"/></div>
+      <div class="field"><label>Time Impact</label><input id="f_time" placeholder="e.g. +2 weeks"/></div>
+    </div>
+    <div class="field"><label>Status</label><select id="f_status"><option>Open</option><option>Approved</option><option>Rejected</option></select></div>
+  `);
+
+  if(m==='addTask') return wrap('Add Schedule Task',`
+    <div class="field"><label>Task Name</label><input id="f_name" placeholder="e.g. Roof Membrane"/></div>
+    <div class="field-row">
+      <div class="field"><label>Planned Start</label><input id="f_start" type="date"/></div>
+      <div class="field"><label>Planned End</label><input id="f_end" type="date"/></div>
+    </div>
+    <div class="field"><label>Status</label><select id="f_status"><option value="pending">Pending</option><option value="in-progress">In Progress</option><option value="complete">Complete</option></select></div>
+  `);
+
+  if(m==='addDelay') return wrap('Log Delay',`
+    <div class="field"><label>Date</label><input id="f_date" type="date" value="${today()}"/></div>
+    <div class="field"><label>Cause of Delay</label><textarea id="f_cause" rows="2" placeholder="Describe what caused the delay…"></textarea></div>
+    <div class="field"><label>Programme Impact</label><input id="f_impact" placeholder="e.g. 3 weeks"/></div>
+    <div class="field"><label>Proposed Solution / Mitigation</label><textarea id="f_solution" rows="2" placeholder="How will this be recovered?"></textarea></div>
+  `);
+
+  if(m==='addBudgetChange') return wrap('Add Change Order',`
+    <div class="field"><label>Description</label><input id="f_desc" placeholder="e.g. Variation for additional drainage"/></div>
+    <div class="field"><label>Amount (£)</label><input id="f_amount" type="number" placeholder="e.g. 25000"/></div>
+    <div class="field"><label>Type</label><select id="f_type"><option value="approved_changes">Approved Change</option><option value="spent">Additional Spend</option></select></div>
+  `);
+
+  if(m==='addBudgetLine') return wrap('Add Budget Line',`
+    <div class="field-row">
+      <div class="field"><label>Dimension Code</label><input id="f_code" placeholder="e.g. 09"/></div>
+      <div class="field"><label>Area / Description</label><input id="f_area" placeholder="e.g. Drainage"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Budget (£)</label><input id="f_budget" type="number" placeholder="0"/></div>
+      <div class="field"><label>Spent (£)</label><input id="f_spent" type="number" placeholder="0"/></div>
+    </div>
+    <div class="field"><label>Committed (£)</label><input id="f_committed" type="number" placeholder="0"/></div>
+  `);
+
+  const reqFields = (prefix) => `
+    <div class="field-row">
+      <div class="field"><label>Reference</label><input id="f_ref" placeholder="e.g. ${prefix}-004"/></div>
+      <div class="field"><label>Category</label><input id="f_cat" placeholder="e.g. Structural"/></div>
+    </div>
+    <div class="field"><label>Requirement Description</label><textarea id="f_desc" rows="3"></textarea></div>`;
+
+  const checkFields = () => `
+    <div class="field-row">
+      <div class="field"><label>Date</label><input id="f_date" type="date" value="${today()}"/></div>
+      <div class="field"><label>Reference</label><input id="f_ref" placeholder="e.g. QC-004"/></div>
+    </div>
+    <div class="field"><label>Description of Check</label><input id="f_desc" placeholder="e.g. Concrete pour inspection"/></div>
+    <div class="field-row">
+      <div class="field"><label>Result</label><select id="f_result"><option>Pass</option><option>Fail</option></select></div>
+      <div class="field"><label>Inspector</label><input id="f_inspector" placeholder="Name"/></div>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="f_notes" rows="2"></textarea></div>`;
+
+  const ncrFields = (type) => `
+    <div class="field-row">
+      <div class="field"><label>Date</label><input id="f_date" type="date" value="${today()}"/></div>
+      <div class="field"><label>Reference</label><input id="f_ref" placeholder="e.g. ${type==='safety'?'INC':'NCR'}-002"/></div>
+    </div>
+    <div class="field"><label>Description</label><textarea id="f_desc" rows="2"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label>Severity</label><select id="f_sev"><option>Minor</option><option>Major</option><option>Critical</option>${type==='safety'?'<option>High</option>':''}</select></div>
+      <div class="field"><label>Status</label><select id="f_status"><option>Open</option><option>Closed</option></select></div>
+    </div>
+    <div class="field"><label>Corrective Action</label><textarea id="f_action" rows="2"></textarea></div>`;
+
+  if(m==='addQReq')   return wrap('Add Quality Requirement', reqFields('QR'));
+  if(m==='addQCheck') return wrap('Record Quality Check', checkFields());
+  if(m==='addNCR')    return wrap('Raise Non-Conformance Report', ncrFields('quality'));
+  if(m==='addSReq')   return wrap('Add Safety Requirement', reqFields('SR'));
+  if(m==='addSCheck') return wrap('Record Safety Inspection', checkFields());
+  if(m==='addIncident')return wrap('Log Safety Incident', ncrFields('safety'));
+
+  if(m==='addStakeholder') return wrap('Add Stakeholder / Contact',`
+    <div class="field"><label>Name</label><input id="f_name" placeholder="Full name or company"/></div>
+    <div class="field-row">
+      <div class="field"><label>Role</label><input id="f_role" placeholder="e.g. Site Manager"/></div>
+      <div class="field"><label>Organisation</label><input id="f_org" placeholder="e.g. CoreBuild Ltd"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Email</label><input id="f_email" type="email"/></div>
+      <div class="field"><label>Phone</label><input id="f_phone" type="tel"/></div>
+    </div>
+    <div class="field"><label>Type</label><select id="f_type"><option value="client">Client Team</option><option value="contractor">Main Contractor</option><option value="sub">Subcontractor</option></select></div>
+  `);
+
+  if(m==='composeUpdate') {
+    const proj = activeProject();
+    return wrap('Compose Project Update',`
+      <div class="field"><label>Update Type</label><select id="f_type"><option>Progress Report</option><option>Site Instruction</option><option>RFI Response</option><option>Change Notice</option><option>Meeting Minutes</option></select></div>
+      <div class="field"><label>Recipients</label><select id="f_recipients" multiple style="height:80px"><option value="client" selected>Client Team</option><option value="contractor">Main Contractor</option><option value="sub">Subcontractors</option></select><div style="font-size:11px;color:var(--text3);margin-top:3px">Hold Ctrl/Cmd to select multiple</div></div>
+      <div class="field"><label>Subject</label><input id="f_subject" placeholder="e.g. Monthly Progress Report – January 2025"/></div>
+      <div class="field"><label>Message / Report Body</label><textarea id="f_body" rows="5" placeholder="Write your update…"></textarea></div>
+      <div class="field"><label>Sent by</label><input id="f_sentby" placeholder="Your name" value="${esc(proj.comms.stakeholders[0]?.name||'')}"/></div>
+    `,'Send Update');
+  }
+
+  return '';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODAL SAVE HANDLERS
+// ═══════════════════════════════════════════════════════════════
+function attachModalListeners(div){
+  div.querySelector('#modalClose')?.addEventListener('click',()=>{ modalState=null; div.remove(); });
+  div.querySelector('#modalSave')?.addEventListener('click',()=>{ handleModalSave(); div.remove(); });
+}
+
+function gv(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
+function gvn(id){ return parseFloat(gv(id))||0; }
+function gvb(id){ const el=document.getElementById(id); return el?el.checked:false; }
+
+function handleModalSave(){
+  const m = modalState; modalState=null;
+  const proj = activeProject();
+
+  if(m==='newProject'){
+    const name=gv('f_name'); if(!name){showToast('Project name required');return;}
+    const newP = {
+      id:uid(), name, client:gv('f_client'), location:gv('f_loc'),
+      startDate:gv('f_start'), endDate:gv('f_end'), budget:gvn('f_budget')||0, status:'active',
+      scope:{description:'',items:[],creepItems:[]},
+      schedule:{overallProgress:0,plannedProgress:0,tasks:[],delayLog:[]},
+      budget_data:{original:gvn('f_budget')||0,approved_changes:0,spent:0,committed:0,breakdown:[],overspendLog:[]},
+      quality:{requirements:[],checks:[],ncrs:[]},
+      safety:{requirements:[],checks:[],incidents:[]},
+      comms:{stakeholders:[],updates:[]}
+    };
+    STATE.projects.push(newP); STATE.activeProject=newP.id; STATE.activeTab='scope';
+    showToast('Project created!');
+  } else if(m==='editScopeDesc'){
+    proj.scope.description=gv('f_scopeDesc');
+  } else if(m==='addScopeItem'){
+    proj.scope.items.push({id:uid(),title:gv('f_scopeTitle'),included:gv('f_scopeIncluded')==='1'});
+  } else if(m==='addCreep'){
+    proj.scope.creepItems.push({id:uid(),date:gv('f_date'),description:gv('f_desc'),costImpact:gvn('f_cost'),timeImpact:gv('f_time'),status:gv('f_status')});
+    showToast('Scope change logged');
+  } else if(m==='addTask'){
+    proj.schedule.tasks.push({id:uid(),name:gv('f_name'),plannedStart:gv('f_start'),plannedEnd:gv('f_end'),actualStart:null,actualEnd:null,status:gv('f_status')});
+  } else if(m==='addDelay'){
+    proj.schedule.delayLog.push({id:uid(),date:gv('f_date'),cause:gv('f_cause'),impact:gv('f_impact'),solution:gv('f_solution')});
+    showToast('Delay logged');
+  } else if(m==='addBudgetChange'){
+    const field=gv('f_type'); proj.budget_data[field]=(proj.budget_data[field]||0)+gvn('f_amount');
+    showToast('Change order added');
+  } else if(m==='addBudgetLine'){
+    proj.budget_data.breakdown.push({id:uid(),code:gv('f_code'),area:gv('f_area'),budget:gvn('f_budget'),spent:gvn('f_spent'),committed:gvn('f_committed')});
+  } else if(m==='addQReq'){
+    proj.quality.requirements.push({id:uid(),ref:gv('f_ref'),description:gv('f_desc'),category:gv('f_cat'),status:'active'});
+  } else if(m==='addQCheck'){
+    proj.quality.checks.push({id:uid(),date:gv('f_date'),ref:gv('f_ref'),description:gv('f_desc'),result:gv('f_result'),inspector:gv('f_inspector'),notes:gv('f_notes')});
+  } else if(m==='addNCR'){
+    proj.quality.ncrs.push({id:uid(),date:gv('f_date'),ref:gv('f_ref'),description:gv('f_desc'),severity:gv('f_sev'),status:gv('f_status'),action:gv('f_action')});
+  } else if(m==='addSReq'){
+    proj.safety.requirements.push({id:uid(),ref:gv('f_ref'),description:gv('f_desc'),category:gv('f_cat'),status:'active'});
+  } else if(m==='addSCheck'){
+    proj.safety.checks.push({id:uid(),date:gv('f_date'),ref:gv('f_ref'),description:gv('f_desc'),result:gv('f_result'),inspector:gv('f_inspector'),notes:gv('f_notes')});
+  } else if(m==='addIncident'){
+    proj.safety.incidents.push({id:uid(),date:gv('f_date'),ref:gv('f_ref'),description:gv('f_desc'),severity:gv('f_sev'),status:gv('f_status'),action:gv('f_action')});
+    showToast('Incident logged');
+  } else if(m==='addStakeholder'){
+    proj.comms.stakeholders.push({id:uid(),name:gv('f_name'),role:gv('f_role'),org:gv('f_org'),email:gv('f_email'),phone:gv('f_phone'),type:gv('f_type')});
+  } else if(m==='composeUpdate'){
+    const sel=document.getElementById('f_recipients');
+    const recipients=sel?Array.from(sel.selectedOptions).map(o=>o.value):['client'];
+    proj.comms.updates.push({id:uid(),date:today(),type:gv('f_type'),recipients,subject:gv('f_subject'),body:gv('f_body'),sentBy:gv('f_sentby')});
+    showToast('Update sent!');
+  }
+
+  saveState(); render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AI ASSISTANT TAB — Voice + Chat
+// ═══════════════════════════════════════════════════════════════
+
+// AI conversation state — persists during session
+let AI_MESSAGES = [
+  { role:'ai', text:`👋 I'm your CP Manager AI — a senior construction PM and contract advisor built into this app.\n\nI know every project you're tracking here. Ask me anything — or tap 🎙 to speak. I'll answer, update the project, and talk back to you.\n\nTry: *"What's the status of my projects?"* or *"Log a delay on Greenway — concrete delivery 2 weeks late."*`, time: new Date() }
+];
+let AI_THINKING = false;
+let voiceMode = null; // null | 'global' | 'ai-chat'
+let recognition = null;
+let synthesis = window.speechSynthesis;
+let currentUtterance = null;
+let aiInputDraft = '';
+
+// ── AI Page Renderer ──────────────────────────────────────────
+function renderAI(proj){
+  const vitals = readVitals(proj);
+  const signals = generateSignals(proj);
+  const alertCount = signals.filter(s=>s.level==='critical').length;
+
+  return `<div class="ai-page" id="aiPage" style="height:calc(100vh - 140px);display:flex;flex-direction:column">
+    <div class="ai-header">
+      <div class="ai-title">
+        🤖 AI Assistant
+        ${alertCount?`<span class="pill pill-red">${alertCount} Alert${alertCount>1?'s':''}</span>`:'<span class="pill pill-green">All Clear</span>'}
+      </div>
+      <div class="ai-subtitle">Voice + Chat · Powered by Claude · Knows your projects</div>
+      <div class="ai-context-bar">
+        <div class="ai-ctx-pill">📋 ${esc(proj.name)}</div>
+        <div class="ai-ctx-pill">💵 $${fmt(proj.budget_data.original)}</div>
+        <div class="ai-ctx-pill">📅 ${proj.schedule.overallProgress}% complete</div>
+        <div class="ai-ctx-pill">🧬 ${signals.length} signal${signals.length!==1?'s':''}</div>
+        <div class="ai-ctx-pill" id="aiSpeakToggle" onclick="toggleSpeakBack()" style="cursor:pointer;border-color:${AI_SPEAK_BACK?'var(--cyan)':'var(--border2)'};color:${AI_SPEAK_BACK?'var(--cyan)':'var(--text2)'}">
+          🔊 ${AI_SPEAK_BACK?'Voice ON':'Voice OFF'}
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-messages" id="aiMessages">
+      ${AI_MESSAGES.map((m,i)=>renderAIMessage(m,i)).join('')}
+      ${AI_THINKING?`<div class="ai-msg ai"><div class="ai-msg-avatar ai-av">CP</div><div class="ai-msg-bubble"><div class="ai-typing"><span></span><span></span><span></span></div></div></div>`:''}
+    </div>
+
+    <div class="ai-compose">
+      <div class="ai-quick-btns">
+        <button class="ai-quick" data-quick="What's the status of all my projects?">📊 Status</button>
+        <button class="ai-quick" data-quick="Run the Copilot sensors on the active project and tell me what's firing.">🧬 Copilot check</button>
+        <button class="ai-quick" data-quick="What are the biggest risks on this project right now?">⚠️ Risks</button>
+        <button class="ai-quick" data-quick="What should I be doing this week on this project?">📅 This week</button>
+        <button class="ai-quick" data-quick="Summarise the budget position for the active project.">💵 Budget</button>
+        <button class="ai-quick" data-quick="Are there any open NCRs or safety incidents?">🦺 Safety & Quality</button>
+        <button class="ai-quick" data-quick="Draft a monthly progress report for the active project.">📤 Draft report</button>
+      </div>
+      <div class="ai-compose-row">
+        <button class="ai-voice-btn ${voiceMode==='ai-chat'?'active':''}" id="aiVoiceBtn" onclick="toggleAIVoice()" title="Voice input">🎙</button>
+        <textarea class="ai-input" id="aiInput" placeholder="Ask me anything about your projects…" rows="1"
+          oninput="onAIInput(this)" onkeydown="onAIKey(event)">${esc(aiInputDraft)}</textarea>
+        <button class="ai-send-btn" id="aiSendBtn" onclick="sendAIMessage()" ${aiInputDraft.trim()?'':'disabled'}>↑</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderAIMessage(m, i){
+  const isAI = m.role === 'ai';
+  const timeStr = m.time ? new Date(m.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '';
+  const htmlText = m.text
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/\n/g,'<br/>')
+    .replace(/`(.*?)`/g,'<code style="background:var(--surf2);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:12px">$1</code>');
+  return `<div class="ai-msg ${isAI?'ai':'user'}">
+    <div class="ai-msg-avatar ${isAI?'ai-av':'user-av'}">${isAI?'CP':'👤'}</div>
+    <div>
+      <div class="ai-msg-bubble">${htmlText}</div>
+      <div class="ai-msg-time">${timeStr}</div>
+    </div>
+  </div>`;
+}
+
+// ── Build AI context snapshot ─────────────────────────────────
+function buildAIContext(){
+  const projects = STATE.projects;
+  const proj = activeProject();
+  const vitals = readVitals(proj);
+  const signals = generateSignals(proj);
+  const bd = proj.budget_data;
+  const contract = bd.original + bd.approved_changes;
+  const forecast = bd.spent + bd.committed;
+
+  return `You are CP Manager AI — a senior construction project management and contract advisor embedded in the CP Manager app. You have full knowledge of the user's projects and speak as a direct, experienced PM advisor.
+
+ACTIVE PROJECT: ${proj.name}
+Client: ${proj.client} | Location: ${proj.location}
+Start: ${fmtDate(proj.startDate)} → End: ${fmtDate(proj.endDate)}
+Budget: Contract $${fmt(contract)} | Spent $${fmt(bd.spent)} | Committed $${fmt(bd.committed)} | Forecast $${fmt(forecast)} | ${forecast>contract?'OVER BUDGET by $'+fmt(forecast-contract):'Headroom $'+fmt(contract-forecast)}
+Schedule: ${proj.schedule.overallProgress}% actual vs ${proj.schedule.plannedProgress}% planned | ${proj.schedule.overallProgress<proj.schedule.plannedProgress-5?'DELAYED by '+(proj.schedule.plannedProgress-proj.schedule.overallProgress)+'%':'On track'}
+Scope: ${proj.scope.items.filter(i=>i.included).length} items included | ${(proj.scope.creepItems||[]).filter(c=>c.status==='Open').length} open scope changes
+Quality: ${proj.quality.checks.length} checks | ${proj.quality.ncrs.filter(n=>n.status==='Open').length} open NCRs
+Safety: ${proj.safety.checks.length} inspections | ${proj.safety.incidents.filter(i=>i.status==='Open').length} open incidents
+Communications: ${proj.comms.stakeholders.length} stakeholders | ${proj.comms.updates.length} updates sent
+Schedule tasks: ${proj.schedule.tasks.map(t=>t.name+' ('+t.status+')').join(', ')||'none'}
+Delays logged: ${proj.schedule.delayLog.map(d=>d.cause+' — '+d.impact).join('; ')||'none'}
+Open NCRs: ${proj.quality.ncrs.filter(n=>n.status==='Open').map(n=>n.ref+': '+n.description).join('; ')||'none'}
+Open incidents: ${proj.safety.incidents.filter(i=>i.status==='Open').map(i=>i.ref+': '+i.description).join('; ')||'none'}
+Budget breakdown: ${bd.breakdown.map(l=>l.code+' '+l.area+': budget $'+fmt(l.budget)+' spent $'+fmt(l.spent)).join(' | ')||'none'}
+
+COPILOT SIGNALS FIRING: ${signals.length?signals.map(s=>s.sensor+' ('+s.level+'): '+s.value+' vs threshold '+s.threshold).join('; '):'None — all vitals within range'}
+
+ALL PROJECTS IN PORTFOLIO:
+${projects.map(p=>{
+  const b=p.budget_data, c=b.original+b.approved_changes, f=b.spent+b.committed;
+  return `• ${p.name}: ${p.schedule.overallProgress}% complete, budget ${f>c?'OVER by $'+fmt(f-c):'OK headroom $'+fmt(c-f)}, status ${p.status}`;
+}).join('\n')}
+
+INSTRUCTIONS:
+- Answer as a direct, experienced construction PM. No corporate waffle.
+- When the user asks you to log, add, or update project data, describe exactly what you would add and ask them to confirm — you cannot directly write to the database from chat, but guide them precisely.
+- When Copilot signals are firing, proactively mention them if relevant.
+- Keep responses concise for voice use — aim for under 120 words unless detail is needed.
+- If the user is asking by voice, structure your response so it sounds natural when spoken aloud.
+- For contract questions, reference FIDIC, NEC, JCT as relevant.
+- Use $ for currency throughout.`;
+}
+
+// ── Send AI message ───────────────────────────────────────────
+async function sendAIMessage(textOverride){
+  const input = document.getElementById('aiInput');
+  const text = textOverride || (input?input.value.trim():'');
+  if(!text || AI_THINKING) return;
+
+  aiInputDraft = '';
+  AI_MESSAGES.push({ role:'user', text, time: new Date() });
+  AI_THINKING = true;
+  if(input){ input.value=''; input.style.height='auto'; }
+  if(STATE.activeTab!=='ai') STATE.activeTab='ai';
+  render();
+  scrollAIToBottom();
+
+  try {
+    const messages = [];
+    // Build conversation history (last 10 exchanges)
+    const recent = AI_MESSAGES.slice(-20).filter(m=>m.role!=='ai'||AI_MESSAGES.indexOf(m)>0);
+    recent.forEach(m=>{
+      if(m.role==='user') messages.push({role:'user',content:m.text});
+      else if(m.role==='ai'&&messages.length>0) messages.push({role:'assistant',content:m.text});
+    });
+    // Ensure alternating and starts with user
+    const cleanMsgs = [];
+    let lastRole = null;
+    for(const m of messages){
+      if(m.role!==lastRole){ cleanMsgs.push(m); lastRole=m.role; }
+    }
+    if(!cleanMsgs.length||cleanMsgs[cleanMsgs.length-1].role!=='user'){
+      cleanMsgs.push({role:'user',content:text});
+    }
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1000,
+        system: buildAIContext(),
+        messages: cleanMsgs
+      })
+    });
+    const data = await resp.json();
+    const reply = data.content?.map(c=>c.text||'').join('')||'Sorry, I had trouble responding. Please try again.';
+    AI_THINKING = false;
+    AI_MESSAGES.push({ role:'ai', text:reply, time: new Date() });
+    render();
+    scrollAIToBottom();
+    if(AI_SPEAK_BACK) speakText(reply);
+  } catch(err){
+    AI_THINKING = false;
+    AI_MESSAGES.push({ role:'ai', text:`I had a connection issue: ${err.message}. Please check your internet and try again.`, time: new Date() });
+    render();
+    scrollAIToBottom();
+  }
+}
+
+function scrollAIToBottom(){
+  setTimeout(()=>{
+    const el=document.getElementById('aiMessages');
+    if(el) el.scrollTop=el.scrollHeight;
+  },80);
+}
+
+function onAIInput(el){
+  aiInputDraft=el.value;
+  el.style.height='auto';
+  el.style.height=Math.min(el.scrollHeight,120)+'px';
+  const btn=document.getElementById('aiSendBtn');
+  if(btn) btn.disabled=!el.value.trim();
+}
+
+function onAIKey(e){
+  if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendAIMessage(); }
+}
+
+// ── Quick buttons ─────────────────────────────────────────────
+function handleQuickBtn(text){
+  aiInputDraft = text;
+  sendAIMessage(text);
+}
+
+// ── Text-to-Speech ────────────────────────────────────────────
+let AI_SPEAK_BACK = false;
+
+function toggleSpeakBack(){
+  AI_SPEAK_BACK = !AI_SPEAK_BACK;
+  if(!AI_SPEAK_BACK && currentUtterance){ synthesis.cancel(); currentUtterance=null; }
+  render();
+}
+
+function speakText(text){
+  if(!synthesis) return;
+  synthesis.cancel();
+  // Strip markdown for speech
+  const clean = text
+    .replace(/\*\*(.*?)\*\*/g,'$1')
+    .replace(/\*(.*?)\*/g,'$1')
+    .replace(/`(.*?)`/g,'$1')
+    .replace(/#{1,3}\s/g,'')
+    .replace(/\n/g,' ')
+    .slice(0,600); // cap for voice
+  const utt = new SpeechSynthesisUtterance(clean);
+  utt.rate = 1.05;
+  utt.pitch = 1;
+  utt.volume = 1;
+  // Prefer a natural English voice
+  const voices = synthesis.getVoices();
+  const preferred = voices.find(v=>v.name.includes('Samantha')||v.name.includes('Daniel')||v.name.includes('Google UK')||v.name.includes('en-GB')||v.lang==='en-GB');
+  if(preferred) utt.voice = preferred;
+  currentUtterance = utt;
+  synthesis.speak(utt);
+}
+
+// ── Speech Recognition ────────────────────────────────────────
+function initRecognition(mode){
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRec){
+    showToast('Voice not supported on this browser. Try Chrome or Safari.');
+    return null;
+  }
+  const rec = new SpeechRec();
+  rec.continuous = false;
+  rec.interimResults = true;
+  rec.lang = 'en-US';
+  rec.onresult = e=>{
+    const transcript = Array.from(e.results).map(r=>r[0].transcript).join('');
+    if(mode==='global'){
+      updateOrbTranscript(transcript);
+    } else {
+      const inp=document.getElementById('aiInput');
+      if(inp){ inp.value=transcript; aiInputDraft=transcript; onAIInput(inp); }
+      updateVoiceBtnTranscript(transcript);
+    }
+    if(e.results[e.results.length-1].isFinal){
+      if(mode==='global') handleGlobalVoiceCommand(transcript);
+      else sendAIMessage(transcript);
+      stopVoice();
+    }
+  };
+  rec.onerror = e=>{ showToast('Voice error: '+e.error); stopVoice(); };
+  rec.onend = ()=>{ if(voiceMode) stopVoice(); };
+  return rec;
+}
+
+function toggleGlobalVoice(){
+  if(voiceMode) { stopVoice(); return; }
+  voiceMode='global';
+  recognition=initRecognition('global');
+  if(!recognition) return;
+  recognition.start();
+  showVoiceOrb();
+  const btn=document.getElementById('btnGlobalMic');
+  if(btn) btn.classList.add('listening');
+}
+
+function toggleAIVoice(){
+  if(voiceMode==='ai-chat') { stopVoice(); return; }
+  if(voiceMode) stopVoice();
+  voiceMode='ai-chat';
+  recognition=initRecognition('ai-chat');
+  if(!recognition) return;
+  recognition.start();
+  const btn=document.getElementById('aiVoiceBtn');
+  if(btn){ btn.classList.add('active'); btn.innerHTML='🔴'; }
+  showToast('Listening… speak now');
+}
+
+function stopVoice(){
+  if(recognition){ try{ recognition.stop(); }catch(e){} recognition=null; }
+  voiceMode=null;
+  hideVoiceOrb();
+  const gBtn=document.getElementById('btnGlobalMic');
+  if(gBtn) gBtn.classList.remove('listening');
+  const aBtn=document.getElementById('aiVoiceBtn');
+  if(aBtn){ aBtn.classList.remove('active'); aBtn.innerHTML='🎙'; }
+}
+
+// ── Global Voice Orb ──────────────────────────────────────────
+function showVoiceOrb(){
+  const existing=document.getElementById('voiceOrb');
+  if(existing) return;
+  const div=document.createElement('div');
+  div.className='voice-orb-overlay'; div.id='voiceOrb';
+  div.innerHTML=`
+    <div class="voice-orb-close" onclick="stopVoice()">✕</div>
+    <div style="position:relative">
+      <div class="voice-orb-rings"></div>
+      <div class="voice-orb-rings"></div>
+      <div class="voice-orb-rings"></div>
+      <div class="voice-orb listening" onclick="stopVoice()">🎙</div>
+    </div>
+    <div class="voice-orb-status" id="orbStatus">Listening…</div>
+    <div class="voice-orb-transcript" id="orbTranscript">Speak a command</div>
+    <div class="voice-orb-hint">Tap orb to cancel</div>`;
+  document.body.appendChild(div);
+}
+
+function hideVoiceOrb(){
+  const orb=document.getElementById('voiceOrb');
+  if(orb) orb.remove();
+}
+
+function updateOrbTranscript(text){
+  const el=document.getElementById('orbTranscript');
+  if(el) el.textContent=text;
+}
+
+function updateVoiceBtnTranscript(text){
+  showToast('🎙 '+text.slice(0,60)+(text.length>60?'…':''));
+}
+
+// ── Global Voice Command Router ───────────────────────────────
+// Routes spoken commands to the right action or to the AI
+function handleGlobalVoiceCommand(text){
+  hideVoiceOrb();
+  const lower = text.toLowerCase();
+
+  // Navigation commands
+  if(lower.includes('go to') || lower.includes('open') || lower.includes('show me')){
+    const tabMap = {'program':'program','scope':'scope','schedule':'schedule','budget':'budget',
+      'quality':'quality','safety':'safety','comms':'comms','communication':'comms',
+      'copilot':'copilot','ai':'ai','assistant':'ai'};
+    for(const [word,tabId] of Object.entries(tabMap)){
+      if(lower.includes(word)){ STATE.activeTab=tabId; render(); speakIfEnabled(`Opening ${word}`); return; }
+    }
+  }
+
+  // Quick status
+  if(lower.includes('status')||lower.includes('how are we doing')||lower.includes("what's happening")){
+    STATE.activeTab='ai';
+    render();
+    sendAIMessage('Give me a quick verbal status update on the active project. Keep it under 60 words.');
+    return;
+  }
+
+  // Copilot check
+  if(lower.includes('copilot')||lower.includes('sensor')||lower.includes('alert')){
+    STATE.activeTab='copilot'; render();
+    const signals=generateSignals(activeProject());
+    const msg=signals.length?`Copilot has ${signals.length} signal${signals.length>1?'s':''} firing: ${signals.map(s=>s.label).join(', ')}`:'All Copilot sensors are clear. Project vitals are within range.';
+    speakIfEnabled(msg); showToast(msg.slice(0,80)); return;
+  }
+
+  // Everything else → send to AI
+  STATE.activeTab='ai';
+  render();
+  sendAIMessage(text);
+}
+
+function speakIfEnabled(text){
+  if(AI_SPEAK_BACK) speakText(text);
+}
+
+// ── Attach quick button listeners ─────────────────────────────
+function attachAIListeners(){
+  document.querySelectorAll('[data-quick]').forEach(btn=>{
+    btn.addEventListener('click',()=>handleQuickBtn(btn.dataset.quick));
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EVENT DELEGATION
+// ═══════════════════════════════════════════════════════════════
+function attachListeners(){
+  document.getElementById('projSelect')?.addEventListener('change',e=>{STATE.activeProject=e.target.value;render();});
+  ['btnNewProj','btnNewProj2'].forEach(id=>{document.getElementById(id)?.addEventListener('click',()=>{modalState='newProject';showModal();});});
+  document.querySelectorAll('[data-tab]').forEach(el=>{el.addEventListener('click',()=>{STATE.activeTab=el.dataset.tab;render();});});
+  document.querySelectorAll('[data-modal]').forEach(el=>{el.addEventListener('click',()=>{modalState=el.dataset.modal;showModal();});});
+  document.querySelectorAll('[data-open-project]').forEach(el=>{
+    el.addEventListener('click',e=>{e.stopPropagation();STATE.activeProject=el.dataset.openProject;STATE.activeTab=el.dataset.gotoTab||'scope';render();});
+  });
+  document.querySelectorAll('[data-clone-project]').forEach(el=>{
+    el.addEventListener('click',e=>{
+      e.stopPropagation();STATE.activeProject=el.dataset.cloneProject;modalState='newProject';showModal();
+      setTimeout(()=>{const b=document.querySelector('.seg-opt[data-seg="clone"]');if(b)b.click();const s=document.getElementById('f_cloneFrom');if(s)s.value=el.dataset.cloneProject;},80);
+    });
+  });
+  // Delete handlers
+  document.querySelectorAll('[data-del-task]').forEach(el=>{el.addEventListener('click',e=>{e.stopPropagation();const p=activeProject();p.schedule.tasks.splice(parseInt(el.dataset.delTask),1);saveState();render();});});
+  document.querySelectorAll('[data-del-delay]').forEach(el=>{el.addEventListener('click',e=>{e.stopPropagation();const p=activeProject();p.schedule.delayLog.splice(parseInt(el.dataset.delDelay),1);saveState();render();});});
+  document.querySelectorAll('[data-del-budget]').forEach(el=>{el.addEventListener('click',e=>{e.stopPropagation();const p=activeProject();p.budget_data.breakdown.splice(parseInt(el.dataset.delBudget),1);saveState();render();});});
+  // AI listeners
+  attachAIListeners();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════════
+render();
+</script>
+</body>
+</html>
